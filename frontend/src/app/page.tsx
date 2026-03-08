@@ -1,49 +1,70 @@
 import Link from "next/link";
+import { ParticlesBackground } from "@/components/landing/particles-background";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen flex flex-col overflow-hidden relative font-sans text-slate-900 selection:bg-primary/20">
-      {/* Ethereal Background Orbs */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="orb orb-1" />
-        <div className="orb orb-2" />
-        <div className="orb orb-3" />
-      </div>
+    <div
+      className="min-h-screen flex flex-col overflow-hidden relative"
+      style={{ background: "#FFFFFF" }}
+    >
+      {/* Fondo de partículas */}
+      <ParticlesBackground />
 
-      {/* Navigation */}
-      <header className="relative w-full z-50 px-8 py-6 md:px-12 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-slate-600 text-[24px]">
-            public
-          </span>
-          <span className="font-display font-light text-xl tracking-tight text-slate-800">
-            Alethia
-          </span>
-        </div>
+      {/* Navegación */}
+      <header className="relative z-10 w-full px-8 py-6 md:px-12 flex items-center justify-between">
+        <div className="w-20" />
         <Link
           href="/onboarding"
-          className="font-sans text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors duration-300"
+          className="text-sm font-light text-gray-400 hover:text-gray-800 transition-colors duration-300 tracking-wide"
         >
           Iniciar sesión
         </Link>
       </header>
 
-      {/* Main Content (Hero) */}
-      <main className="relative z-10 flex-grow flex flex-col items-center justify-center text-center px-4 w-full">
-        <div className="max-w-3xl mx-auto flex flex-col items-center gap-8">
-          <h1 className="font-serif font-light text-[56px] md:text-[88px] leading-none text-slate-900 fade-in-up tracking-tight">
-            Alethia
+      {/* Hero: solo "alethia" */}
+      <main className="relative z-10 flex-grow flex flex-col items-center justify-center">
+        <div className="flex flex-col items-center gap-10">
+          <h1
+            className="fade-in-up"
+            style={{
+              fontFamily: "'DM Sans', system-ui, sans-serif",
+              fontWeight: 100,
+              fontSize: "clamp(51px, 11.2vw, 128px)",
+              letterSpacing: "-0.03em",
+              color: "#1a1a1a",
+              lineHeight: 1,
+              userSelect: "none",
+              display: "flex",
+              alignItems: "baseline",
+            }}
+          >
+            <span>ale</span>
+            <span style={{ filter: "blur(3.5px)", opacity: 0.85 }}>t</span>
+            <span style={{ filter: "blur(3.5px)", opacity: 0.85 }}>h</span>
+            <span>ia</span>
           </h1>
-          <p className="font-sans font-normal text-lg md:text-[18px] text-slate-600 max-w-lg leading-relaxed fade-in-up fade-in-up-delay-1">
-            Inteligencia artificial para una democracia más transparente
+
+          <p
+            className="fade-in-up fade-in-up-delay-1 text-center"
+            style={{
+              fontFamily: "'DM Sans', system-ui, sans-serif",
+              fontWeight: 300,
+              fontSize: "14px",
+              letterSpacing: "0.18em",
+              color: "#9ca3af",
+              textTransform: "uppercase",
+            }}
+          >
+            Transparencia legislativa inteligente
           </p>
-          <div className="fade-in-up fade-in-up-delay-2 mt-4">
+
+          <div className="fade-in-up fade-in-up-delay-2">
             <Link
               href="/onboarding"
-              className="group relative inline-flex items-center justify-center px-8 py-3 rounded-full bg-[rgba(0,0,0,0.03)] hover:bg-[rgba(0,0,0,0.06)] border border-slate-200 hover:border-slate-300 text-slate-700 text-sm font-medium tracking-wide transition-all duration-500 ease-out"
+              className="group inline-flex items-center gap-2 px-8 py-3 rounded-full border border-gray-200 text-gray-500 text-sm font-light tracking-widest uppercase hover:border-gray-400 hover:text-gray-800 transition-all duration-500"
             >
-              <span>Comenzar</span>
-              <span className="material-symbols-outlined text-[16px] ml-2 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
+              Comenzar
+              <span className="material-symbols-outlined text-[14px] opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
                 arrow_forward
               </span>
             </Link>
@@ -53,9 +74,18 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="relative z-10 w-full py-6 text-center">
-        <div className="text-[10px] uppercase tracking-widest text-slate-400 font-sans">
+        <span
+          style={{
+            fontFamily: "'DM Sans', system-ui, sans-serif",
+            fontWeight: 300,
+            fontSize: "10px",
+            letterSpacing: "0.2em",
+            color: "#d1d5db",
+            textTransform: "uppercase",
+          }}
+        >
           Buenos Aires — Argentina
-        </div>
+        </span>
       </footer>
     </div>
   );
