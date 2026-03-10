@@ -138,16 +138,15 @@ export default async function DashboardPoliticianPage({ params }: PoliticianPage
     .sort((a, b) => new Date(b.vote.voted_at).getTime() - new Date(a.vote.voted_at).getTime())
     .slice(0, 8);
 
-  // Top topics from speeches
-  const topicCounts: Record<string, number> = {};
-  politician.speeches.forEach((s) => {
-    s.topics.forEach((t) => {
-      topicCounts[t] = (topicCounts[t] || 0) + 1;
-    });
-  });
-  const topTopics = Object.entries(topicCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
+  // Top topics from consistency scores (topics the politician is scored on)
+  const topTopics = politician.consistency_by_topic
+    .filter((ct) => ct.topic_id !== null)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5)
+    .map((ct) => ({
+      name: ct.policy_area || "General",
+      score: Math.round(ct.score * 100),
+    }));
 
   return (
     <div className="p-6 md:p-8 max-w-6xl mx-auto">
@@ -404,15 +403,15 @@ export default async function DashboardPoliticianPage({ params }: PoliticianPage
 
             {/* Top topics */}
             <div className="mb-6">
-              <p className="text-sm font-medium text-gray-600 mb-3">Temas más frecuentes:</p>
+              <p className="text-sm font-medium text-gray-600 mb-3">Temas con mayor coherencia:</p>
               <div className="flex flex-wrap gap-2">
                 {topTopics.length > 0 ? (
-                  topTopics.map(([topic, count]) => (
+                  topTopics.map((topic) => (
                     <span
-                      key={topic}
+                      key={topic.name}
                       className="px-3 py-1.5 bg-gray-100 text-gray-700 text-xs rounded-full font-medium"
                     >
-                      {topic} ({count})
+                      {topic.name} ({topic.score}%)
                     </span>
                   ))
                 ) : (
