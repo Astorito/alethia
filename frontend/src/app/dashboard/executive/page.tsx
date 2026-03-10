@@ -1,5 +1,9 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { DepthDeckCarousel } from "@/components/executive/depth-deck-carousel";
 import { getExecutiveAuthorities, getExecutiveDecrees } from "@/lib/data";
 import type { ExecutiveAuthority, DecreeOrResolution } from "@/lib/types";
 import { mandateRange } from "@/lib/utils";
@@ -75,6 +79,7 @@ function DecreeCard({ decree }: { decree: DecreeOrResolution }) {
 }
 
 export default function ExecutivePage() {
+  const router = useRouter();
   const authorities = getExecutiveAuthorities();
   const decrees = getExecutiveDecrees();
 
@@ -269,11 +274,10 @@ export default function ExecutivePage() {
 
       {/* ── 3. GABINETE DE MINISTROS ────────────────────────── */}
       <Section title="Gabinete de Ministros" subtitle="Composición actual">
-        <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin">
-          {ministers.map((auth) => (
-            <MinisterCard key={auth.id} auth={auth} />
-          ))}
-        </div>
+        <DepthDeckCarousel 
+          authorities={ministers} 
+          onSelect={(authority) => router.push(`/dashboard/executive/${authority.id}`)}
+        />
       </Section>
 
       {/* ── 4. RELACIÓN CON EL CONGRESO ─────────────────────── */}
