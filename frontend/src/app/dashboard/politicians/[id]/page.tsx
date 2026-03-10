@@ -437,9 +437,9 @@ export default async function DashboardPoliticianPage({ params }: PoliticianPage
                   <blockquote key={speech.id} className="p-4 border-l-4 border-gray-200 bg-gray-50/50 rounded-r-xl">
                     <p className="text-sm text-gray-700 italic line-clamp-2">"{speech.transcript.slice(0, 120)}..."</p>
                     <div className="flex items-center gap-2 mt-2">
-                      <span className="text-[10px] text-gray-400">{formatDate(speech.session_date)}</span>
+                      <span className="text-[10px] text-gray-400">{formatDate(speech.created_at)}</span>
                       <Link
-                        href={speech.source_url}
+                        href="#"
                         className="text-[10px] text-blue-600 hover:text-blue-700 font-medium"
                       >
                         Ver transcript →
