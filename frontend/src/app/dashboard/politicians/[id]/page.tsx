@@ -118,6 +118,18 @@ export default async function DashboardPoliticianPage({ params }: PoliticianPage
     .sort((a, b) => new Date(b.vote.voted_at).getTime() - new Date(a.vote.voted_at).getTime())[0];
 
   const currentRole = politician.current_role;
+
+  // Extra mock data
+  const attendancePct = Math.round(politician.activity_score * 100);
+  const advisorCount = Math.floor(politician.activity_score * 12) + 3; // mock 3-15
+  const djData = {
+    yearPrev: 2022,
+    yearCurr: 2023,
+    prev: Math.floor(Math.random() * 50 + 20) * 1_000_000,
+    curr: Math.floor(Math.random() * 80 + 30) * 1_000_000,
+  };
+  const djDiff = djData.curr - djData.prev;
+  const djPct = ((djDiff / djData.prev) * 100).toFixed(1);
   const mandateEnd = currentRole?.ended_at
     ? new Date(currentRole.ended_at).getFullYear()
     : new Date().getFullYear() + 2;
@@ -239,7 +251,7 @@ export default async function DashboardPoliticianPage({ params }: PoliticianPage
 
       {/* ── 2. Actividad ─────────────────────────────────────── */}
       <Section title="Actividad" subtitle="Presencia y participación" id="actividad">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           <div className="glass-card-dash p-5 rounded-2xl border border-black/5">
             <div className="flex items-center gap-2 mb-3">
               <span className="material-symbols-outlined text-gray-400 text-[18px]">how_to_vote</span>
@@ -249,6 +261,17 @@ export default async function DashboardPoliticianPage({ params }: PoliticianPage
               {presencia}%
             </p>
             <p className={`text-xs mt-2 font-medium ${presenciaColor}`}>{presenciaLabel}</p>
+          </div>
+
+          <div className="glass-card-dash p-5 rounded-2xl border border-black/5">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="material-symbols-outlined text-gray-400 text-[18px]">event_available</span>
+              <span className="text-[10px] uppercase tracking-wider text-gray-400 font-medium">Asistencia</span>
+            </div>
+            <p className="text-3xl font-mono font-semibold text-pure-black leading-none">
+              {attendancePct}%
+            </p>
+            <p className="text-xs mt-2 text-gray-400">Sesiones asistidas</p>
           </div>
 
           <div className="glass-card-dash p-5 rounded-2xl border border-black/5">
@@ -271,6 +294,52 @@ export default async function DashboardPoliticianPage({ params }: PoliticianPage
               —
             </p>
             <p className="text-xs mt-2 text-gray-400">En desarrollo</p>
+          </div>
+
+          <div className="glass-card-dash p-5 rounded-2xl border border-black/5">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="material-symbols-outlined text-gray-400 text-[18px]">badge</span>
+              <span className="text-[10px] uppercase tracking-wider text-gray-400 font-medium">Asesores</span>
+            </div>
+            <p className="text-3xl font-mono font-semibold text-pure-black leading-none">
+              {advisorCount}
+            </p>
+            <p className="text-xs mt-2 text-gray-400">Planta de asesores</p>
+          </div>
+        </div>
+      </Section>
+
+      {/* ── Declaración Jurada ──────────────────────────────── */}
+      <Section title="Declaración Jurada Patrimonial" subtitle="Variación anual · OA" id="dj">
+        <div className="glass-card-dash rounded-2xl p-6 border border-black/5">
+          <div className="grid grid-cols-2 gap-4 mb-5">
+            <div className="p-4 rounded-xl bg-gray-50/60 border border-black/5">
+              <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">{djData.yearPrev}</p>
+              <p className="text-2xl font-mono font-semibold text-pure-black">
+                ${(djData.prev / 1_000_000).toFixed(1)}M
+              </p>
+              <p className="text-xs text-gray-400 mt-1">Patrimonio declarado</p>
+            </div>
+            <div className="p-4 rounded-xl bg-gray-50/60 border border-black/5">
+              <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">{djData.yearCurr}</p>
+              <p className="text-2xl font-mono font-semibold text-pure-black">
+                ${(djData.curr / 1_000_000).toFixed(1)}M
+              </p>
+              <p className="text-xs text-gray-400 mt-1">Patrimonio declarado</p>
+            </div>
+          </div>
+          <div className={`flex items-center gap-3 p-4 rounded-xl ${djDiff >= 0 ? "bg-emerald-50 border border-emerald-100" : "bg-red-50 border border-red-100"}`}>
+            <span className={`material-symbols-outlined text-[22px] ${djDiff >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+              {djDiff >= 0 ? "trending_up" : "trending_down"}
+            </span>
+            <div>
+              <p className={`font-semibold ${djDiff >= 0 ? "text-emerald-700" : "text-red-600"}`}>
+                {djDiff >= 0 ? "+" : ""}{djPct}% variación interanual
+              </p>
+              <p className="text-xs text-gray-500">
+                Período {djData.yearPrev}–{djData.yearCurr} · Fuente: Oficina Anticorrupción
+              </p>
+            </div>
           </div>
         </div>
       </Section>

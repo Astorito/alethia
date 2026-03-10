@@ -43,19 +43,73 @@ export default async function MinisterPage({ params }: MinisterPageProps) {
       year: new Date(authority.started_at).getFullYear(),
       title: `Asume como ${authority.role_title}`,
       description: authority.ministry_or_area || "",
-      icon: "calendar",
+      icon: "calendar_month",
     },
     {
       year: 2024,
       title: "Primera reforma estructural",
       description: "Implementación de nuevas políticas",
-      icon: "trending",
+      icon: "trending_up",
     },
     {
       year: 2024,
       title: "Acuerdo interministerial",
       description: "Coordinación con otros ministerios",
       icon: "handshake",
+    },
+  ];
+
+  // Mock: declaración jurada
+  const djVariation = {
+    yearPrev: 2022,
+    yearCurr: 2023,
+    prevAmount: Math.floor(Math.random() * 80 + 40) * 1_000_000,
+    currAmount: Math.floor(Math.random() * 120 + 60) * 1_000_000,
+  };
+  const djDiff = djVariation.currAmount - djVariation.prevAmount;
+  const djPct = ((djDiff / djVariation.prevAmount) * 100).toFixed(1);
+
+  // Mock: presupuesto ministerio
+  const budget = {
+    total: Math.floor(Math.random() * 500 + 100) * 1_000_000_000,
+    executed: Math.floor(Math.random() * 60 + 30),
+    categories: [
+      { label: "Personal", pct: 45 },
+      { label: "Bienes y Servicios", pct: 28 },
+      { label: "Transferencias", pct: 18 },
+      { label: "Inversión", pct: 9 },
+    ],
+  };
+
+  // Mock: noticias
+  const mockNews = [
+    {
+      id: "n1",
+      title: `${authority.full_name} anuncia nuevas medidas para el sector`,
+      source: "Infobae",
+      date: "2024-12-10",
+      url: "#",
+    },
+    {
+      id: "n2",
+      title: `El ministerio confirma ajuste en el presupuesto 2025`,
+      source: "La Nación",
+      date: "2024-11-28",
+      url: "#",
+    },
+    {
+      id: "n3",
+      title: `Reunión con organismos internacionales sobre política sectorial`,
+      source: "Clarín",
+      date: "2024-11-15",
+      url: "#",
+    },
+    {
+      id: "n4",
+      title: `Informe de gestión: logros y desafíos del primer año`,
+      source: "Ámbito",
+      date: "2024-10-30",
+      url: "#",
     },
   ];
 
@@ -216,6 +270,100 @@ export default async function MinisterPage({ params }: MinisterPageProps) {
                   <span className="material-symbols-outlined text-gray-400 text-[18px] mt-0.5">check_circle</span>
                   <span className="text-sm text-gray-600">{resp}</span>
                 </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Declaración Jurada */}
+          <section className="glass-card-dash rounded-2xl p-6 border border-black/5">
+            <h2 className="font-serif text-xl font-semibold text-pure-black mb-5">Declaración Jurada Patrimonial</h2>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="p-4 rounded-xl bg-gray-50/60 border border-black/5">
+                <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">{djVariation.yearPrev}</p>
+                <p className="text-2xl font-mono font-semibold text-pure-black">
+                  ${(djVariation.prevAmount / 1_000_000).toFixed(1)}M
+                </p>
+                <p className="text-xs text-gray-400 mt-1">Patrimonio declarado</p>
+              </div>
+              <div className="p-4 rounded-xl bg-gray-50/60 border border-black/5">
+                <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">{djVariation.yearCurr}</p>
+                <p className="text-2xl font-mono font-semibold text-pure-black">
+                  ${(djVariation.currAmount / 1_000_000).toFixed(1)}M
+                </p>
+                <p className="text-xs text-gray-400 mt-1">Patrimonio declarado</p>
+              </div>
+            </div>
+            <div className={`flex items-center gap-3 p-4 rounded-xl ${djDiff >= 0 ? "bg-emerald-50 border border-emerald-100" : "bg-red-50 border border-red-100"}`}>
+              <span className={`material-symbols-outlined text-[22px] ${djDiff >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                {djDiff >= 0 ? "trending_up" : "trending_down"}
+              </span>
+              <div>
+                <p className={`font-semibold text-base ${djDiff >= 0 ? "text-emerald-700" : "text-red-600"}`}>
+                  {djDiff >= 0 ? "+" : ""}{djPct}% en un año
+                </p>
+                <p className="text-xs text-gray-500">
+                  Variación {djVariation.yearPrev}–{djVariation.yearCurr} · Fuente: OA
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Presupuesto del Ministerio */}
+          <section className="glass-card-dash rounded-2xl p-6 border border-black/5">
+            <h2 className="font-serif text-xl font-semibold text-pure-black mb-5">Presupuesto del Ministerio</h2>
+            <div className="flex items-end justify-between mb-4">
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">Total asignado 2024</p>
+                <p className="text-3xl font-mono font-semibold text-pure-black">
+                  ${(budget.total / 1_000_000_000).toFixed(1)}B
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">Ejecución</p>
+                <p className="text-2xl font-mono font-semibold text-blue-600">{budget.executed}%</p>
+              </div>
+            </div>
+            {/* Progress bar */}
+            <div className="h-2 bg-gray-100 rounded-full mb-5 overflow-hidden">
+              <div
+                className="h-full bg-blue-500 rounded-full transition-all"
+                style={{ width: `${budget.executed}%` }}
+              />
+            </div>
+            <div className="space-y-2">
+              {budget.categories.map((cat) => (
+                <div key={cat.label} className="flex items-center gap-3">
+                  <span className="text-xs text-gray-500 w-36 shrink-0">{cat.label}</span>
+                  <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-gray-400 rounded-full" style={{ width: `${cat.pct}%` }} />
+                  </div>
+                  <span className="text-xs text-gray-400 font-mono w-8 text-right">{cat.pct}%</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Últimas Noticias */}
+          <section className="glass-card-dash rounded-2xl p-6 border border-black/5">
+            <h2 className="font-serif text-xl font-semibold text-pure-black mb-4">Últimas Noticias</h2>
+            <div className="space-y-3">
+              {mockNews.map((news) => (
+                <a
+                  key={news.id}
+                  href={news.url}
+                  className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50/70 transition-colors group"
+                >
+                  <span className="material-symbols-outlined text-gray-300 group-hover:text-gray-500 text-[20px] mt-0.5 transition-colors">article</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-pure-black group-hover:text-blue-700 transition-colors line-clamp-2 leading-snug">
+                      {news.title}
+                    </p>
+                    <p className="text-[10px] text-gray-400 mt-1">
+                      {news.source} · {new Date(news.date).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" })}
+                    </p>
+                  </div>
+                  <span className="material-symbols-outlined text-gray-300 text-[16px] shrink-0 group-hover:text-blue-500 transition-colors">open_in_new</span>
+                </a>
               ))}
             </div>
           </section>

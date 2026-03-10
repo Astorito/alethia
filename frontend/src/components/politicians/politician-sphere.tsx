@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState } from "react";
 import type { PoliticianWithParty } from "@/lib/types";
 
 interface PoliticianSphereProps {
@@ -8,276 +8,171 @@ interface PoliticianSphereProps {
   onSelect: (politician: PoliticianWithParty) => void;
 }
 
-interface CardPosition {
-  x: number;
-  y: number;
-  z: number;
-  rotateX: number;
-  rotateY: number;
-}
+// Predefined mosaic layout: [col, row, size] — size: 1=small, 2=medium, 3=large
+// Using a scattered grid pattern similar to the reference image
+const MOSAIC_LAYOUT = [
+  // col (unitless x), row (unitless y), size multiplier
+  [0, 0, 1], [1, 0, 1.3], [2, 0, 1], [3, 0, 1.2], [4, 0, 1],
+  [0.5, 1, 1.2], [1.5, 1, 1.6], [2.5, 1, 1.3], [3.5, 1, 1],
+  [0, 2, 1], [1, 2, 1.3], [2, 2, 2.0], [3, 2, 1.3], [4, 2, 1],
+  [0.5, 3, 1.2], [1.5, 3, 1.4], [2.5, 3, 1.6], [3.5, 3, 1.2],
+  [0, 4, 1], [1, 4, 1.2], [2, 4, 1.3], [3, 4, 1.2], [4, 4, 1],
+  [0.5, 5, 1], [1.5, 5, 1.3], [2.5, 5, 1.1], [3.5, 5, 1],
+  [1, 6, 1], [2, 6, 1.2], [3, 6, 1],
+];
 
-function getGoldenPositions(count: number, radius: number): CardPosition[] {
-  const goldenAngle = Math.PI * (3 - Math.sqrt(5));
-  const positions: CardPosition[] = [];
-
-  for (let i = 0; i < count; i++) {
-    const t = i / (count - 1);
-    const y = 1 - t * 2; // 1 to -1
-    const rxy = Math.sqrt(Math.max(0, 1 - y * y));
-    const theta = goldenAngle * i;
-
-    const x = Math.cos(theta) * rxy * radius;
-    const z = Math.sin(theta) * rxy * radius;
-    const yPos = y * radius * 0.55;
-
-    const rotY = -Math.atan2(x, z) * (180 / Math.PI);
-    const rotX = Math.atan2(yPos, Math.sqrt(x * x + z * z)) * (180 / Math.PI) * 0.4;
-
-    positions.push({ x, y: yPos, z, rotateX: rotX, rotateY: rotY });
-  }
-  return positions;
-}
+// Each card gets a unique float animation delay
+const FLOAT_DURATIONS = [3.2, 4.1, 3.7, 4.5, 3.0, 3.8, 4.2, 3.5, 4.0, 3.3];
 
 export function PoliticianSphere({ politicians, onSelect }: PoliticianSphereProps) {
-  const [rotX, setRotX] = useState(10);
-  const [rotY, setRotY] = useState(0);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
-  const isDragging = useRef(false);
-  const lastMouse = useRef({ x: 0, y: 0 });
-  const velRef = useRef({ x: 0, y: 0 });
-  const animRef = useRef<number>(0);
-  const rotRef = useRef({ x: 10, y: 0 });
+  const displayPoliticians = politicians.slice(0, MOSAIC_LAYOUT.length);
 
-  const RADIUS = 340;
-  const displayPoliticians = politicians.slice(0, 30);
-
-  // Inertia animation
-  const animate = useCallback(() => {
-    if (!isDragging.current) {
-      velRef.current.y = velRef.current.y * 0.96 + 0.12; // auto-rotate + inertia
-      velRef.current.x *= 0.95;
-
-      rotRef.current.y += velRef.current.y;
-      rotRef.current.x += velRef.current.x;
-      rotRef.current.x = Math.max(-25, Math.min(25, rotRef.current.x));
-
-      setRotY(rotRef.current.y);
-      setRotX(rotRef.current.x);
-    }
-    animRef.current = requestAnimationFrame(animate);
-  }, []);
-
-  useEffect(() => {
-    animRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(animRef.current);
-  }, [animate]);
-
-  const onMouseDown = (e: React.MouseEvent) => {
-    isDragging.current = true;
-    lastMouse.current = { x: e.clientX, y: e.clientY };
-    velRef.current = { x: 0, y: 0 };
-  };
-
-  const onMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging.current) return;
-    const dx = e.clientX - lastMouse.current.x;
-    const dy = e.clientY - lastMouse.current.y;
-    velRef.current = { x: dy * 0.15, y: dx * 0.15 };
-    rotRef.current.y += dx * 0.35;
-    rotRef.current.x += dy * 0.2;
-    rotRef.current.x = Math.max(-25, Math.min(25, rotRef.current.x));
-    setRotY(rotRef.current.y);
-    setRotX(rotRef.current.x);
-    lastMouse.current = { x: e.clientX, y: e.clientY };
-  };
-
-  const onMouseUp = () => {
-    isDragging.current = false;
-  };
-
-  const onTouchStart = (e: React.TouchEvent) => {
-    isDragging.current = true;
-    lastMouse.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    velRef.current = { x: 0, y: 0 };
-  };
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging.current) return;
-    const dx = e.touches[0].clientX - lastMouse.current.x;
-    const dy = e.touches[0].clientY - lastMouse.current.y;
-    velRef.current = { x: dy * 0.15, y: dx * 0.15 };
-    rotRef.current.y += dx * 0.35;
-    rotRef.current.x += dy * 0.2;
-    rotRef.current.x = Math.max(-25, Math.min(25, rotRef.current.x));
-    setRotY(rotRef.current.y);
-    setRotX(rotRef.current.x);
-    lastMouse.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-  };
-
-  const positions = getGoldenPositions(displayPoliticians.length, RADIUS);
-
-  // For each card, compute transformed Z after sphere rotation to determine opacity
-  const cardsWithDepth = displayPoliticians.map((p, i) => {
-    const pos = positions[i];
-    const ry = rotY * (Math.PI / 180);
-    const rx = rotX * (Math.PI / 180);
-
-    // Rotate Z around Y axis
-    const cosY = Math.cos(ry);
-    const sinY = Math.sin(ry);
-    const x2 = pos.x * cosY + pos.z * sinY;
-    const z2 = -pos.x * sinY + pos.z * cosY;
-
-    // Rotate Z around X axis
-    const cosX = Math.cos(rx);
-    const sinX = Math.sin(rx);
-    const z3 = pos.y * sinX + z2 * cosX;
-
-    return { politician: p, pos, transformedZ: z3, index: i };
-  });
-
-  // Sort by depth (back to front)
-  cardsWithDepth.sort((a, b) => a.transformedZ - b.transformedZ);
+  const UNIT = 130; // px per grid unit
+  const CARD_BASE = 90; // base card size in px
 
   return (
-    <div
-      className="w-full h-full min-h-[520px] relative flex items-center justify-center overflow-hidden select-none"
-      onMouseDown={onMouseDown}
-      onMouseMove={onMouseMove}
-      onMouseUp={onMouseUp}
-      onMouseLeave={onMouseUp}
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onMouseUp}
-      style={{ cursor: isDragging.current ? "grabbing" : "grab" }}
-    >
-      {/* 3D Scene */}
+    <div className="w-full h-full min-h-[520px] relative overflow-auto">
+      {/* Floating style injected once */}
+      <style>{`
+        @keyframes float-up {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+        }
+        @keyframes float-down {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(10px); }
+        }
+        .float-card-up { animation: float-up var(--dur, 3.5s) ease-in-out infinite; }
+        .float-card-down { animation: float-down var(--dur, 3.5s) ease-in-out infinite; }
+      `}</style>
+
+      {/* Mosaic container - centered */}
       <div
+        className="relative mx-auto"
         style={{
-          width: 0,
-          height: 0,
-          position: "relative",
-          transformStyle: "preserve-3d",
-          perspective: "1200px",
+          width: UNIT * 5,
+          height: UNIT * 7,
+          minWidth: UNIT * 5,
         }}
       >
-        <div
-          style={{
-            transformStyle: "preserve-3d",
-            transform: `rotateX(${rotX}deg) rotateY(${rotY}deg)`,
-            transition: isDragging.current ? "none" : "transform 0.05s linear",
-          }}
-        >
-          {cardsWithDepth.map(({ politician, pos, transformedZ }) => {
-            const maxZ = RADIUS;
-            // Normalized depth: 1 = closest, 0 = farthest
-            const depth = (transformedZ + maxZ) / (maxZ * 2);
-            const opacity = 0.25 + depth * 0.75;
-            const scale = 0.75 + depth * 0.35;
-            const blur = (1 - depth) * 5;
-            const isHovered = hoveredId === politician.id;
+        {displayPoliticians.map((politician, i) => {
+          const [col, row, size] = MOSAIC_LAYOUT[i];
+          const cardSize = Math.round(CARD_BASE * size);
+          const x = col * UNIT;
+          const y = row * UNIT;
+          const dur = FLOAT_DURATIONS[i % FLOAT_DURATIONS.length];
+          const isEven = i % 2 === 0;
+          const isHovered = hoveredId === politician.id;
 
-            return (
+          return (
+            <div
+              key={politician.id}
+              className={isEven ? "float-card-up" : "float-card-down"}
+              style={{
+                position: "absolute",
+                left: x,
+                top: y,
+                "--dur": `${dur}s`,
+                animationDelay: `${(i * 0.3) % dur}s`,
+                zIndex: isHovered ? 50 : Math.round(size * 10),
+                transition: "z-index 0s",
+              } as React.CSSProperties}
+              onMouseEnter={() => setHoveredId(politician.id)}
+              onMouseLeave={() => setHoveredId(null)}
+              onClick={() => onSelect(politician)}
+            >
               <div
-                key={politician.id}
                 style={{
-                  position: "absolute",
-                  left: 0,
-                  top: 0,
-                  transform: `translate3d(${pos.x}px, ${pos.y}px, ${pos.z}px) rotateY(${pos.rotateY}deg)`,
-                  transformStyle: "preserve-3d",
-                  willChange: "transform",
+                  width: cardSize,
+                  height: cardSize + 36,
+                  borderRadius: 16,
+                  overflow: "hidden",
+                  cursor: "pointer",
+                  boxShadow: isHovered
+                    ? "0 20px 50px rgba(0,0,0,0.22)"
+                    : `0 ${4 + size * 4}px ${12 + size * 8}px rgba(0,0,0,${0.06 + size * 0.03})`,
+                  transform: `scale(${isHovered ? 1.1 : 1})`,
+                  transition: "transform 0.25s ease, box-shadow 0.25s ease",
+                  background: "white",
+                  border: "1px solid rgba(0,0,0,0.06)",
                 }}
               >
-                <div
-                  onClick={() => onSelect(politician)}
-                  onMouseEnter={() => setHoveredId(politician.id)}
-                  onMouseLeave={() => setHoveredId(null)}
-                  style={{
-                    width: "120px",
-                    transform: `translate(-50%, -50%) scale(${isHovered ? scale * 1.2 : scale})`,
-                    opacity: isHovered ? 1 : opacity,
-                    filter: isHovered ? "none" : `blur(${blur}px)`,
-                    transition: "transform 0.3s, opacity 0.3s, filter 0.3s",
-                    cursor: "pointer",
-                    zIndex: Math.round(depth * 100),
-                  }}
-                >
-                  {/* Card */}
-                  <div
+                {/* Photo fills most of the card */}
+                <div style={{ width: "100%", height: cardSize, overflow: "hidden", position: "relative" }}>
+                  <img
+                    src={politician.photo_url}
+                    alt={politician.full_name}
                     style={{
-                      background: isHovered ? "white" : `rgba(255,255,255,${0.6 + depth * 0.4})`,
-                      borderRadius: "16px",
-                      padding: "12px",
-                      boxShadow: isHovered
-                        ? "0 20px 60px rgba(0,0,0,0.2)"
-                        : `0 ${4 + depth * 8}px ${8 + depth * 16}px rgba(0,0,0,${0.04 + depth * 0.08})`,
-                      border: `1px solid rgba(0,0,0,${0.05 + depth * 0.05})`,
-                      textAlign: "center",
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      display: "block",
                     }}
-                  >
-                    {/* Photo */}
+                  />
+                  {/* Party badge on top-right */}
+                  {politician.party && (
                     <div
                       style={{
-                        width: "64px",
-                        height: "64px",
-                        borderRadius: "50%",
+                        position: "absolute",
+                        top: 6,
+                        right: 6,
+                        background: politician.party.color_hex || "#555",
+                        color: "white",
+                        fontSize: 8,
+                        fontWeight: 700,
+                        padding: "2px 6px",
+                        borderRadius: 999,
+                        letterSpacing: "0.04em",
+                        textTransform: "uppercase",
+                        whiteSpace: "nowrap",
+                        maxWidth: cardSize - 12,
                         overflow: "hidden",
-                        margin: "0 auto 8px",
-                        border: politician.party?.color_hex
-                          ? `3px solid ${politician.party.color_hex}`
-                          : "3px solid #e5e7eb",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+                        textOverflow: "ellipsis",
                       }}
                     >
-                      <img
-                        src={politician.photo_url}
-                        alt={politician.full_name}
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                      />
+                      {politician.party.short_name}
                     </div>
+                  )}
+                </div>
 
-                    {/* Name */}
-                    <p
-                      style={{
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        color: "#1a1a1a",
-                        lineHeight: 1.3,
-                        marginBottom: "4px",
-                        overflow: "hidden",
-                        display: "-webkit-box",
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical",
-                      }}
-                    >
-                      {politician.full_name}
-                    </p>
-
-                    {/* Party */}
-                    {politician.party && (
-                      <p
-                        style={{
-                          fontSize: "9px",
-                          color: politician.party.color_hex,
-                          fontWeight: 500,
-                        }}
-                      >
-                        {politician.party.short_name}
-                      </p>
-                    )}
-                  </div>
+                {/* Name strip at bottom */}
+                <div
+                  style={{
+                    height: 36,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "0 8px",
+                    background: "white",
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: Math.max(9, Math.round(10 * size)),
+                      fontWeight: 600,
+                      color: "#1a1a1a",
+                      textAlign: "center",
+                      lineHeight: 1.2,
+                      overflow: "hidden",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                    }}
+                  >
+                    {politician.full_name}
+                  </p>
                 </div>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Hint */}
-      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 pointer-events-none">
-        <p className="text-xs text-gray-400 bg-white/70 backdrop-blur-sm px-3 py-1.5 rounded-full border border-black/5">
-          Arrastrá para rotar · Clic para ver perfil
+      <div className="sticky bottom-3 flex justify-center pointer-events-none">
+        <p className="text-xs text-gray-400 bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full border border-black/5 shadow-sm">
+          Clic en una tarjeta para ver el perfil completo
         </p>
       </div>
     </div>
