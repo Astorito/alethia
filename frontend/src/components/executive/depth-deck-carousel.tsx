@@ -70,30 +70,40 @@ export function DepthDeckCarousel({ authorities, onSelect }: DepthDeckCarouselPr
 
   const getCardStyle = (index: number) => {
     const relativeIndex = index - currentIndex;
-    const isVisible = relativeIndex >= 0 && relativeIndex < visibleCount;
+    const isVisible = relativeIndex >= -1 && relativeIndex < visibleCount + 1;
     
     if (!isVisible) {
       return {
         opacity: 0,
-        scale: 0.8,
+        scale: 0.7,
         zIndex: 0,
-        x: relativeIndex < 0 ? -100 : 100,
-        filter: "blur(4px)",
+        x: relativeIndex < 0 ? -400 : 400,
+        filter: "blur(8px)",
       };
     }
 
-    // Calculate depth effect
-    const centerOffset = relativeIndex - (visibleCount - 1) / 2;
-    const depthScale = 1 - Math.abs(centerOffset) * 0.05;
-    const depthOpacity = 1 - Math.abs(centerOffset) * 0.15;
-    const depthBlur = Math.abs(centerOffset) * 1;
+    // Center the visible cards
+    const centerIndex = (visibleCount - 1) / 2; // 1.5 for 4 visible cards
+    const centerOffset = relativeIndex - centerIndex;
+    
+    // Depth effects - more pronounced
+    const depthScale = 1 - Math.abs(centerOffset) * 0.08;
+    const depthOpacity = relativeIndex >= 0 && relativeIndex < visibleCount 
+      ? 1 - Math.abs(centerOffset) * 0.2 
+      : 0.3;
+    const depthBlur = Math.abs(centerOffset) * 2;
+    const depthZIndex = 20 - Math.abs(Math.round(centerOffset * 5));
+    
+    // X position calculation to center the group
+    // Start from center and offset by relative position
+    const baseX = centerOffset * (itemWidth + gap);
     
     return {
       opacity: depthOpacity,
-      scale: depthScale,
-      zIndex: 10 - Math.abs(Math.round(centerOffset * 2)),
-      x: relativeIndex * (itemWidth + gap),
-      filter: `blur(${depthBlur}px)`,
+      scale: Math.max(0.85, depthScale),
+      zIndex: depthZIndex,
+      x: baseX,
+      filter: `blur(${Math.min(depthBlur, 4)}px)`,
     };
   };
 
@@ -127,7 +137,7 @@ export function DepthDeckCarousel({ authorities, onSelect }: DepthDeckCarouselPr
       {/* Carousel Container */}
       <div
         ref={containerRef}
-        className="relative h-[320px] overflow-hidden cursor-grab active:cursor-grabbing px-12"
+        className="relative h-[340px] overflow-hidden cursor-grab active:cursor-grabbing"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -135,7 +145,7 @@ export function DepthDeckCarousel({ authorities, onSelect }: DepthDeckCarouselPr
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
       >
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+        <div className="absolute inset-0 flex items-center justify-center">
           <AnimatePresence>
             {authorities.map((authority, index) => {
               const style = getCardStyle(index);

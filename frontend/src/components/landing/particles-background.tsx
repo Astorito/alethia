@@ -17,13 +17,13 @@ interface Particle {
 }
 
 const PARTICLE_COUNT = 90;
-const PARTICLE_SIZE = 2;
-const PARTICLE_OPACITY = 0.45;
-const GLOW_INTENSITY = 4;
+const PARTICLE_SIZE = 2.5;
+const PARTICLE_OPACITY = 0.7;
+const GLOW_INTENSITY = 6;
 const MOVEMENT_SPEED = 0.35;
 const MOUSE_INFLUENCE = 140;
 const GRAVITY_STRENGTH = 60;
-const PARTICLE_COLOR = "#2a2a2a";
+const PARTICLE_COLOR = "#1a1a1a";
 
 export function ParticlesBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -65,13 +65,13 @@ export function ParticlesBackground() {
         particle.vx += normalizedDx * gravityForce;
         particle.vy += normalizedDy * gravityForce;
 
-        particle.opacity = Math.min(1, particle.baseOpacity + force * 0.4);
+        particle.opacity = Math.min(0.95, particle.baseOpacity + force * 0.25);
 
         const targetGlow = 1 + force * 2.5;
         const currentGlow = particle.glowMultiplier ?? 1;
         particle.glowMultiplier = currentGlow + (targetGlow - currentGlow) * 0.15;
       } else {
-        particle.opacity = Math.max(particle.baseOpacity * 0.3, particle.opacity - 0.02);
+        particle.opacity = Math.max(particle.baseOpacity * 0.6, particle.opacity - 0.015);
 
         const targetGlow = 1;
         const currentGlow = particle.glowMultiplier ?? 1;

@@ -278,11 +278,12 @@ interface PoliticianSphereProps {
 
 export function PoliticianSphere({ politicians, onSelect }: PoliticianSphereProps) {
   return (
-    <div className="w-full h-[600px] relative">
+    <div className="w-full h-full min-h-[500px] relative z-10">
       <Canvas
-        camera={{ position: [0, 0, 18], fov: 50 }}
+        camera={{ position: [0, 0, 16], fov: 45 }}
         gl={{ antialias: true, alpha: true }}
         style={{ background: "transparent" }}
+        className="touch-none"
       >
         <ambientLight intensity={0.6} />
         <directionalLight position={[10, 10, 5]} intensity={0.8} />
