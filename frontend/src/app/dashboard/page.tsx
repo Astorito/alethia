@@ -57,34 +57,39 @@ const quickAccessModules = [
   },
 ];
 
-const mainModules = [
+// Mock news data for the news section
+const latestNews = [
   {
-    name: "Legisladores",
-    href: "/dashboard/politicians",
-    icon: "library_books",
-    description: "Perfiles y actividad",
-    stats: "240+ activos",
+    id: "n1",
+    title: "Senado aprueba reforma previsional con modificaciones",
+    excerpt: "El proyecto fue aprobado por 38 votos a favor y 31 en contra. Se espera que pase a la Cámara de Diputados la próxima semana.",
+    image: "https://images.unsplash.com/photo-1541872703-74c5e44318f2?w=400&h=250&fit=crop",
+    source: "Ámbito Financiero",
+    date: "2024-12-15",
   },
   {
-    name: "Ejecutivo",
-    href: "/dashboard/executive",
-    icon: "account_balance",
-    description: "Presidente y gabinete",
-    stats: "10 ministerios",
+    id: "n2",
+    title: "Diputados debaten nuevo régimen de contratos de trabajo",
+    excerpt: "La iniciativa busca modernizar las normas laborales para adaptarse al trabajo remoto y las nuevas tecnologías.",
+    image: "https://images.unsplash.com/photo-1551818255-e6e10975bc17?w=400&h=250&fit=crop",
+    source: "La Nación",
+    date: "2024-12-14",
   },
   {
-    name: "Temas",
-    href: "/dashboard/topics",
-    icon: "category",
-    description: "Debate legislativo",
-    stats: "50+ temáticas",
+    id: "n3",
+    title: "Presidente anuncia inversión en infraestructura energética",
+    excerpt: "El plan incluye obras en cinco provincias y busca garantizar el suministro eléctrico para los próximos años.",
+    image: "https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?w=400&h=250&fit=crop",
+    source: "Clarín",
+    date: "2024-12-13",
   },
   {
-    name: "Análisis",
-    href: "/dashboard/analytics",
-    icon: "bar_chart",
-    description: "Visualizaciones",
-    stats: "Insights IA",
+    id: "n4",
+    title: "Nuevo proyecto de ley busca regular inteligencia artificial",
+    excerpt: "La iniciativa propone un marco regulatorio para el desarrollo y uso de sistemas de IA en el país.",
+    image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400&h=250&fit=crop",
+    source: "Infobae",
+    date: "2024-12-12",
   },
 ];
 
@@ -155,30 +160,58 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Módulos principales - Navegación por dominios */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {mainModules.map((module) => (
+      {/* Últimas Noticias */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            Últimas Noticias
+          </h2>
           <Link
-            key={module.name}
-            href={module.href}
-            className="glass-card-dash p-5 rounded-2xl hover:shadow-md transition-all group"
+            href="/dashboard/news"
+            className="text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors flex items-center gap-1"
           >
-            <div className="flex items-start justify-between mb-3">
-              <div className="w-10 h-10 rounded-xl bg-black/5 flex items-center justify-center group-hover:bg-black/10 transition-colors">
-                <span className="material-symbols-outlined text-[20px] text-gray-700">
-                  {module.icon}
-                </span>
-              </div>
-              <span className="text-[10px] text-gray-400 font-medium">
-                {module.stats}
-              </span>
-            </div>
-            <h3 className="font-serif text-lg font-medium text-pure-black mb-1">
-              {module.name}
-            </h3>
-            <p className="text-xs text-gray-500">{module.description}</p>
+            Ver más
+            <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
           </Link>
-        ))}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {latestNews.map((news) => (
+            <a
+              key={news.id}
+              href="#"
+              className="glass-card-dash rounded-2xl overflow-hidden hover:shadow-md transition-all group flex flex-col h-full"
+            >
+              {/* Image */}
+              <div className="relative h-32 overflow-hidden">
+                <img
+                  src={news.image}
+                  alt={news.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+              </div>
+              {/* Content */}
+              <div className="p-4 flex-1 flex flex-col">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[10px] font-medium text-blue-600">{news.source}</span>
+                  <span className="text-[10px] text-gray-300">·</span>
+                  <span className="text-[10px] text-gray-400">
+                    {new Date(news.date).toLocaleDateString("es-AR", {
+                      day: "numeric",
+                      month: "short",
+                    })}
+                  </span>
+                </div>
+                <h3 className="text-sm font-semibold text-pure-black mb-2 line-clamp-2 group-hover:text-blue-700 transition-colors">
+                  {news.title}
+                </h3>
+                <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
+                  {news.excerpt}
+                </p>
+              </div>
+            </a>
+          ))}
+        </div>
       </div>
 
       {/* Accesos rápidos según mapa */}
