@@ -2,6 +2,7 @@
 
 import { useState, useRef, useMemo } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import type { ThreeEvent } from "@react-three/fiber";
 import { Image, Text, Html } from "@react-three/drei";
 import * as THREE from "three";
 import type { PoliticianWithParty } from "@/lib/types";
@@ -212,14 +213,14 @@ function SphereContainer({ politicians, onSelect }: SphereContainerProps) {
   });
 
   // Handle mouse/touch events for rotation
-  const handlePointerDown = (e: THREE.Event<PointerEvent>) => {
+  const handlePointerDown = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
     setIsDragging(true);
     lastMouse.current = { x: e.clientX, y: e.clientY };
     gl.domElement.setPointerCapture(e.pointerId);
   };
 
-  const handlePointerMove = (e: THREE.Event<PointerEvent>) => {
+  const handlePointerMove = (e: ThreeEvent<PointerEvent>) => {
     if (!isDragging) return;
     e.stopPropagation();
     
@@ -237,7 +238,7 @@ function SphereContainer({ politicians, onSelect }: SphereContainerProps) {
     lastMouse.current = { x: e.clientX, y: e.clientY };
   };
 
-  const handlePointerUp = (e: THREE.Event<PointerEvent>) => {
+  const handlePointerUp = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
     setIsDragging(false);
     gl.domElement.releasePointerCapture(e.pointerId);
