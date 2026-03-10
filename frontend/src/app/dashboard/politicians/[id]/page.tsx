@@ -1,6 +1,7 @@
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getPoliticianById, getAllInstitutions } from "@/lib/data";
+import { getPoliticianById, getAllInstitutions, getPoliticiansByTopic } from "@/lib/data";
 import { formatDate } from "@/lib/utils";
 import type { Contradiction, ConsistencyScore } from "@/lib/types";
 import { ShareCard } from "@/components/profile/share-card";
@@ -61,6 +62,30 @@ function formatYear(dateStr: string) {
   return new Date(dateStr).getFullYear();
 }
 
+// ─── Section Component ───────────────────────────────────────
+
+function Section({
+  title,
+  subtitle,
+  children,
+  id,
+}: {
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+  id?: string;
+}) {
+  return (
+    <section id={id} className="space-y-4 scroll-mt-4">
+      <div className="flex items-center justify-between">
+        <h2 className="font-serif text-xl font-medium text-pure-black">{title}</h2>
+        {subtitle && <span className="text-[10px] uppercase tracking-widest text-gray-400">{subtitle}</span>}
+      </div>
+      {children}
+    </section>
+  );
+}
+
 // ─── Page ────────────────────────────────────────────────────
 
 export default async function DashboardPoliticianPage({ params }: PoliticianPageProps) {
@@ -97,12 +122,19 @@ export default async function DashboardPoliticianPage({ params }: PoliticianPage
     ? new Date(currentRole.ended_at).getFullYear()
     : new Date().getFullYear() + 2;
 
-  return (
-    <div className="p-6 md:p-8 space-y-8 max-w-6xl mx-auto">
+  // Votes distribution
+  const yesVotes = politician.votes.filter((v) => v.position === "yes").length;
+  const noVotes = politician.votes.filter((v) => v.position === "no").length;
+  const abstainVotes = politician.votes.filter((v) => v.position === "abstain").length;
+  const absentVotes = politician.votes.filter((v) => v.position === "absent").length;
 
+  return (
+    <div className="p-6 md:p-8 space-y-10 max-w-6xl mx-auto">
       {/* ── Breadcrumb ─────────────────────────────────────── */}
       <nav className="text-xs text-gray-400 font-medium uppercase tracking-wider flex items-center gap-1.5">
-        <span>Legisladores</span>
+        <Link href="/dashboard/politicians" className="hover:text-gray-600 transition-colors">
+          Legisladores
+        </Link>
         <span className="material-symbols-outlined text-[12px]">chevron_right</span>
         <span>
           {currentRole?.role_title?.includes("Senador") ? "Senado" : "Cámara de Diputados"}
@@ -111,7 +143,7 @@ export default async function DashboardPoliticianPage({ params }: PoliticianPage
         <span className="text-pure-black">Perfil</span>
       </nav>
 
-      {/* ── Hero Card ──────────────────────────────────────── */}
+      {/* ── 1. Información Básica ───────────────────────────── */}
       <div className="glass-card-dash rounded-2xl p-6 md:p-8 border border-black/5">
         <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
           {/* Photo */}
@@ -149,7 +181,7 @@ export default async function DashboardPoliticianPage({ params }: PoliticianPage
                 </>
               )}
             </div>
-            <h1 className="font-fraunces text-2xl md:text-3xl text-pure-black font-semibold tracking-tight">
+            <h1 className="font-serif text-2xl md:text-3xl text-pure-black font-semibold tracking-tight">
               {politician.full_name}
             </h1>
             {currentRole && (
@@ -163,62 +195,287 @@ export default async function DashboardPoliticianPage({ params }: PoliticianPage
           <div className="flex flex-wrap gap-3 shrink-0">
             <button className="flex items-center gap-2 px-5 py-2.5 bg-pure-black text-warm-white text-sm font-medium rounded-full hover:bg-black/80 transition-all">
               <span className="material-symbols-outlined text-[16px]">notifications</span>
-              Seguir Actividad
+              Seguir
             </button>
             <button className="flex items-center gap-2 px-5 py-2.5 bg-white/60 text-pure-black text-sm font-medium rounded-full border border-black/10 hover:bg-white/80 transition-all">
               <span className="material-symbols-outlined text-[16px]">download</span>
-              Descargar Reporte
+              Reporte
             </button>
           </div>
         </div>
 
-        {/* Stats bar */}
+        {/* Stats bar - Información resumida */}
         <div className="mt-6 pt-6 border-t border-black/5 grid grid-cols-2 md:grid-cols-4 gap-6">
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-gray-400 font-medium mb-1">Presencia</p>
+            <p className="text-[10px] uppercase tracking-widest text-gray-400 font-medium mb-1">Edad</p>
             <p className="text-2xl font-mono font-semibold text-pure-black leading-none">
-              {presencia}%
+              {politician.birth_date ? new Date().getFullYear() - new Date(politician.birth_date).getFullYear() : "—"}
             </p>
-            <p className={`text-xs mt-1 font-medium ${presenciaColor}`}>{presenciaLabel}</p>
+            <p className="text-xs mt-1 text-gray-400">Años</p>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-gray-400 font-medium mb-1">Discursos</p>
-            <p className="text-2xl font-mono font-semibold text-pure-black leading-none">
-              {politician.speeches.length}
+            <p className="text-[10px] uppercase tracking-widest text-gray-400 font-medium mb-1">Provincia</p>
+            <p className="text-lg font-semibold text-pure-black leading-none">
+              {politician.province}
             </p>
-            <p className="text-xs mt-1 text-gray-400">Registrados</p>
+            <p className="text-xs mt-1 text-gray-400">Distrito electoral</p>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-gray-400 font-medium mb-1">Consistencia</p>
-            <p className={`text-2xl font-mono font-semibold leading-none ${getGradeColor(politician.consistency_grade)}`}>
-              {politician.consistency_grade}
+            <p className="text-[10px] uppercase tracking-widest text-gray-400 font-medium mb-1">Bloque</p>
+            <p className="text-lg font-semibold text-pure-black leading-none truncate">
+              {politician.party?.short_name || "Sin bloque"}
             </p>
-            <p className="text-xs mt-1 text-gray-400">Detectada por IA</p>
+            <p className="text-xs mt-1 text-gray-400">Alineación partidaria</p>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-gray-400 font-medium mb-1">Última actividad</p>
-            {lastVote ? (
-              <>
-                <p className="text-sm font-medium text-pure-black leading-snug line-clamp-1">
-                  {formatDate(lastVote.vote.voted_at)}
-                </p>
-                <p className="text-xs mt-1 text-gray-400 line-clamp-1">{lastVote.vote.title}</p>
-              </>
-            ) : (
-              <p className="text-sm text-gray-400">Sin datos</p>
-            )}
+            <p className="text-[10px] uppercase tracking-widest text-gray-400 font-medium mb-1">Antigüedad</p>
+            <p className="text-lg font-semibold text-pure-black leading-none">
+              {sortedRoles.length > 0 ? `${new Date().getFullYear() - formatYear(sortedRoles[0].started_at)} años` : "—"}
+            </p>
+            <p className="text-xs mt-1 text-gray-400">En el cargo</p>
           </div>
         </div>
       </div>
 
-      {/* ── Trayectoria Política ────────────────────────────── */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-fraunces text-xl text-pure-black">Trayectoria Política</h2>
-          <span className="text-[10px] uppercase tracking-widest text-gray-400">Línea de tiempo detallada</span>
-        </div>
+      {/* ── 2. Actividad ─────────────────────────────────────── */}
+      <Section title="Actividad" subtitle="Presencia y participación" id="actividad">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {sortedRoles.map((role, idx) => {
+          <div className="glass-card-dash p-5 rounded-2xl border border-black/5">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="material-symbols-outlined text-gray-400 text-[18px]">how_to_vote</span>
+              <span className="text-[10px] uppercase tracking-wider text-gray-400 font-medium">Presencia</span>
+            </div>
+            <p className="text-3xl font-mono font-semibold text-pure-black leading-none">
+              {presencia}%
+            </p>
+            <p className={`text-xs mt-2 font-medium ${presenciaColor}`}>{presenciaLabel}</p>
+          </div>
+
+          <div className="glass-card-dash p-5 rounded-2xl border border-black/5">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="material-symbols-outlined text-gray-400 text-[18px]">record_voice_over</span>
+              <span className="text-[10px] uppercase tracking-wider text-gray-400 font-medium">Intervenciones</span>
+            </div>
+            <p className="text-3xl font-mono font-semibold text-pure-black leading-none">
+              {politician.speeches.length}
+            </p>
+            <p className="text-xs mt-2 text-gray-400">Discursos registrados</p>
+          </div>
+
+          <div className="glass-card-dash p-5 rounded-2xl border border-black/5">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="material-symbols-outlined text-gray-400 text-[18px]">description</span>
+              <span className="text-[10px] uppercase tracking-wider text-gray-400 font-medium">Proyectos</span>
+            </div>
+            <p className="text-3xl font-mono font-semibold text-pure-black leading-none">
+              {politician.speeches.filter(s => s.summary?.toLowerCase().includes("proyecto")).length || "—"}
+            </p>
+            <p className="text-xs mt-2 text-gray-400">Presentados</p>
+          </div>
+        </div>
+      </Section>
+
+      {/* ── 3. Proyectos y Votaciones ───────────────────────── */}
+      <Section title="Proyectos y Votaciones" subtitle="Historial de votos" id="proyectos">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="glass-card-dash p-6 rounded-2xl border border-black/5">
+            <h3 className="text-sm font-semibold text-pure-black mb-1">Distribución de votos</h3>
+            <p className="text-[11px] text-gray-400 mb-4">
+              {politician.votes.length} votaciones registradas
+            </p>
+            {politician.votes.length > 0 ? (
+              <VoteDistributionChart yes={yesVotes} no={noVotes} abstain={abstainVotes} absent={absentVotes} />
+            ) : (
+              <p className="text-sm text-gray-400">Sin datos de votación</p>
+            )}
+          </div>
+
+          <div className="glass-card-dash p-6 rounded-2xl border border-black/5">
+            <h3 className="text-sm font-semibold text-pure-black mb-4">Últimas votaciones</h3>
+            <div className="space-y-3">
+              {politician.votes.slice(0, 5).map((vote) => (
+                <div key={vote.id} className="flex items-center justify-between py-2 border-b border-black/5 last:border-0">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-pure-black truncate">{vote.vote.title}</p>
+                    <p className="text-[10px] text-gray-400">{formatDate(vote.vote.voted_at)}</p>
+                  </div>
+                  <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
+                    vote.position === "yes" ? "bg-emerald-100 text-emerald-700" :
+                    vote.position === "no" ? "bg-red-100 text-red-700" :
+                    vote.position === "abstain" ? "bg-amber-100 text-amber-700" :
+                    "bg-gray-100 text-gray-600"
+                  }`}>
+                    {vote.position === "yes" ? "A FAVOR" :
+                     vote.position === "no" ? "EN CONTRA" :
+                     vote.position === "abstain" ? "ABSTENCIÓN" : "AUSENTE"}
+                  </span>
+                </div>
+              ))}
+              {politician.votes.length === 0 && (
+                <p className="text-sm text-gray-400">No hay votaciones registradas</p>
+              )}
+            </div>
+          </div>
+        </div>
+      </Section>
+
+      {/* ── 4. Comisiones ───────────────────────────────────── */}
+      <Section title="Comisiones" subtitle="Participación en órganos deliberativos" id="comisiones">
+        <div className="glass-card-dash p-6 rounded-2xl border border-black/5 text-center py-8">
+          <span className="material-symbols-outlined text-gray-300 text-4xl mb-3 block">groups</span>
+          <p className="text-sm text-gray-500">Información de comisiones en desarrollo</p>
+          <p className="text-[10px] text-gray-400 mt-1">
+            Se mostrarán las comisiones en las que participa este legislador
+          </p>
+        </div>
+      </Section>
+
+      {/* ── 5. Alineación Política ──────────────────────────── */}
+      <Section title="Alineación Política" subtitle="Coherencia por temática" id="alineacion">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="glass-card-dash p-6 rounded-2xl border border-black/5">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="material-symbols-outlined text-muted-gold text-[20px]">smart_toy</span>
+              <h3 className="text-sm font-semibold text-pure-black">Análisis IA</h3>
+            </div>
+            <p className="text-sm text-gray-600 leading-relaxed mb-4">
+              El sistema ha detectado{" "}
+              <span className="font-semibold text-pure-black">
+                {politician.contradictions.length} contradiccion
+                {politician.contradictions.length !== 1 ? "es" : ""} significativa
+                {politician.contradictions.length !== 1 ? "s" : ""}
+              </span>{" "}
+              entre discursos y votos.
+            </p>
+            <div className="flex items-center justify-between py-3 border-t border-black/5">
+              <span className="text-xs text-gray-400">Score de coherencia</span>
+              <span className={`text-lg font-mono font-semibold ${getGradeColor(politician.consistency_grade)}`}>
+                {politician.consistency_score}/10
+              </span>
+            </div>
+            <p className="text-[10px] text-gray-400 mt-2">
+              Última actualización: Hoy
+            </p>
+          </div>
+
+          <div className="glass-card-dash p-6 rounded-2xl border border-black/5">
+            <h3 className="text-sm font-semibold text-pure-black mb-1">Coherencia por tema</h3>
+            <p className="text-[11px] text-gray-400 mb-4">Perfil multidimensional</p>
+            {topTopics.length > 0 ? (
+              <>
+                <PoliticianRadarChart topics={topTopics} />
+                <div className="mt-4 space-y-2">
+                  {topTopics.map((t) => (
+                    <div key={t.id} className="flex justify-between items-center py-1 border-b border-black/4 last:border-0">
+                      <span className="text-sm text-gray-600">{t.policy_area ?? "General"}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-mono text-gray-500">{t.score.toFixed(1)}</span>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded ${
+                          t.grade.startsWith("A") ? "bg-emerald-100 text-emerald-700" :
+                          t.grade.startsWith("B") ? "bg-blue-100 text-blue-700" :
+                          "bg-amber-100 text-amber-700"
+                        }`}>{t.grade}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-gray-400">Sin datos de coherencia por tema</p>
+            )}
+          </div>
+        </div>
+      </Section>
+
+      {/* ── 6. Historial de Votación ────────────────────────── */}
+      <Section title="Historial de Votación" subtitle="Contradicciones detectadas" id="historial">
+        <div className="space-y-4">
+          {sortedContradictions.length === 0 ? (
+            <div className="glass-card-dash rounded-2xl p-6 border border-black/5 text-center py-12">
+              <span className="material-symbols-outlined text-muted-green text-4xl mb-3 block">verified</span>
+              <p className="text-sm text-gray-500">No se detectaron contradicciones significativas.</p>
+            </div>
+          ) : (
+            sortedContradictions.map((c) => {
+              const badge = getContradictionBadge(c.severity);
+              const voteLabel =
+                c.vote_position === "yes"
+                  ? "AFIRMATIVO"
+                  : c.vote_position === "no"
+                    ? "EN CONTRA"
+                    : c.vote_position.toUpperCase();
+
+              return (
+                <div
+                  key={c.id}
+                  className="glass-card-dash rounded-2xl p-5 border border-black/5"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-full ${badge.style}`}>
+                      {badge.label}
+                    </span>
+                    <span className="text-[10px] text-gray-400 font-mono">
+                      {formatDate(c.detected_at)}
+                    </span>
+                  </div>
+
+                  <h4 className="text-sm font-semibold text-pure-black mb-2 leading-snug">
+                    {c.description}
+                  </h4>
+
+                  {(c.severity === "high" || c.severity === "critical") && (
+                    <div className="mt-3 space-y-2">
+                      <div className="bg-white/50 rounded-xl p-3 border border-black/5">
+                        <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-1">Declaración pública</p>
+                        <p className="text-xs text-gray-600 italic leading-relaxed">
+                          &ldquo;{c.speech_stance}&rdquo;
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-end gap-2">
+                        <span className="text-[10px] text-gray-400">Voto:</span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          c.vote_position === "yes" ? "bg-emerald-100 text-emerald-700" :
+                          c.vote_position === "no" ? "bg-red-100 text-red-700" :
+                          "bg-gray-100 text-gray-600"
+                        }`}>
+                          {voteLabel}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </Section>
+
+      {/* ── 7. Patrimonio ───────────────────────────────────── */}
+      <Section title="Patrimonio" subtitle="Declaraciones juradas" id="patrimonio">
+        <div className="glass-card-dash p-6 rounded-2xl border border-black/5 text-center py-8">
+          <span className="material-symbols-outlined text-gray-300 text-4xl mb-3 block">account_balance_wallet</span>
+          <p className="text-sm text-gray-500">Información de patrimonio en desarrollo</p>
+          <p className="text-[10px] text-gray-400 mt-1">
+            Se mostrarán las declaraciones juradas de bienes de este legislador
+          </p>
+        </div>
+      </Section>
+
+      {/* ── 8. Empresas ─────────────────────────────────────── */}
+      <Section title="Empresas" subtitle="Vínculos societarios" id="empresas">
+        <div className="glass-card-dash p-6 rounded-2xl border border-black/5 text-center py-8">
+          <span className="material-symbols-outlined text-gray-300 text-4xl mb-3 block">business</span>
+          <p className="text-sm text-gray-500">Información empresarial en desarrollo</p>
+          <p className="text-[10px] text-gray-400 mt-1">
+            Se mostrarán los vínculos societarios de este legislador
+          </p>
+        </div>
+      </Section>
+
+      {/* ── 9. Redes Políticas ───────────────────────────────── */}
+      <Section title="Redes Políticas" subtitle="Trayectoria y conexiones" id="redes">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {sortedRoles.map((role) => {
             const isPresent = role.ended_at === null;
             const instName = getInstitutionName(role.institution_id);
             return (
@@ -228,9 +485,7 @@ export default async function DashboardPoliticianPage({ params }: PoliticianPage
                   isPresent ? "border-black/10" : "border-black/5"
                 }`}
               >
-                {/* Background image placeholder */}
                 <div className="absolute inset-0 bg-gradient-to-br from-gray-50/40 to-transparent pointer-events-none" />
-
                 <div className="relative z-10">
                   <div className="flex items-center gap-2 mb-3">
                     <span
@@ -246,174 +501,19 @@ export default async function DashboardPoliticianPage({ params }: PoliticianPage
                       </span>
                     )}
                   </div>
-                  <h3 className="font-fraunces text-base font-semibold text-pure-black mb-1">
+                  <h3 className="font-serif text-base font-semibold text-pure-black mb-1">
                     {role.role_title}
                   </h3>
-                  <p className="text-xs text-gray-500 mb-3">{instName}</p>
-                  <p className="text-xs text-gray-400 leading-relaxed">
-                    {role.district && `Distrito: ${role.district}`}
-                  </p>
+                  <p className="text-xs text-gray-500 mb-2">{instName}</p>
+                  {role.district && (
+                    <p className="text-[10px] text-gray-400">Distrito: {role.district}</p>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
-      </section>
-
-      {/* ── Bottom grid ────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-
-        {/* Left: AI Analysis + Topics */}
-        <div className="lg:col-span-2 space-y-6">
-
-          {/* AI Analysis */}
-          <div className="glass-card-dash rounded-2xl p-5 border border-black/5">
-            <div className="flex items-start gap-2 mb-4">
-              <span className="material-symbols-outlined text-muted-gold text-[20px]">smart_toy</span>
-              <h3 className="text-sm font-semibold text-pure-black">Análisis IA</h3>
-            </div>
-            <p className="text-sm text-gray-600 leading-relaxed mb-4">
-              El sistema ha detectado{" "}
-              <span className="font-semibold text-pure-black">
-                {politician.contradictions.length} contradiccion
-                {politician.contradictions.length !== 1 ? "es" : ""} significativa
-                {politician.contradictions.length !== 1 ? "s" : ""}
-              </span>{" "}
-              en el discurso público del representante respecto a sus votaciones en el último período legislativo.
-            </p>
-            <div className="flex items-center justify-between py-3 border-t border-black/5">
-              <span className="text-xs text-gray-400">Score de coherencia</span>
-              <span className={`text-lg font-mono font-semibold ${getGradeColor(politician.consistency_grade)}`}>
-                {politician.consistency_score}/10
-              </span>
-            </div>
-            <p className="text-[10px] text-gray-400 mt-2">
-              Basado en comparación de discursos vs. votos oficiales. Última actualización: Hoy
-            </p>
-          </div>
-
-          {/* Top Topics — RadarChart */}
-          <div className="glass-card-dash rounded-2xl p-5 border border-black/5">
-            <h3 className="text-sm font-semibold text-pure-black mb-1">
-              Coherencia por tema
-            </h3>
-            <p className="text-[11px] text-gray-400 mb-2">Perfil multidimensional de consistencia</p>
-            <PoliticianRadarChart topics={topTopics} />
-            <div className="mt-3 space-y-1.5">
-              {topTopics.map((t) => (
-                <div key={t.id} className="flex justify-between items-center py-1 border-b border-black/4 last:border-0">
-                  <span className="text-xs text-gray-600">{t.policy_area ?? "General"}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono text-gray-500">{t.score.toFixed(1)}</span>
-                    <span className={`text-xs font-bold ${
-                      t.grade.startsWith("A") ? "text-green-600" : t.grade.startsWith("B") ? "text-blue-600" : "text-orange-500"
-                    }`}>{t.grade}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Distribución de votos — PieChart */}
-          {politician.votes.length > 0 && (() => {
-            const yes = politician.votes.filter((v) => v.position === "yes").length;
-            const no = politician.votes.filter((v) => v.position === "no").length;
-            const abstain = politician.votes.filter((v) => v.position === "abstain").length;
-            const absent = politician.votes.filter((v) => v.position === "absent").length;
-            return (
-              <div className="glass-card-dash rounded-2xl p-5 border border-black/5">
-                <h3 className="text-sm font-semibold text-pure-black mb-1">
-                  Distribución de votos
-                </h3>
-                <p className="text-[11px] text-gray-400 mb-1">
-                  {politician.votes.length} votaciones registradas
-                </p>
-                <VoteDistributionChart yes={yes} no={no} abstain={abstain} absent={absent} />
-              </div>
-            );
-          })()}
-        </div>
-
-        {/* Right: Contradiction / Event Timeline */}
-        <div className="lg:col-span-3 space-y-4">
-          {sortedContradictions.length === 0 ? (
-            <div className="glass-card-dash rounded-2xl p-6 border border-black/5 text-center py-12">
-              <span className="material-symbols-outlined text-muted-green text-4xl mb-3 block">verified</span>
-              <p className="text-sm text-gray-500">No se detectaron contradicciones significativas.</p>
-            </div>
-          ) : (
-            sortedContradictions.map((c) => {
-              const badge = getContradictionBadge(c.severity);
-              const voteLabel =
-                c.vote_position === "yes"
-                  ? "AFIRMATIVO"
-                  : c.vote_position === "no"
-                    ? "EN CONTRA"
-                    : c.vote_position.toUpperCase();
-              const voteColor =
-                c.vote_position === "yes"
-                  ? "text-muted-green bg-muted-green/10"
-                  : c.vote_position === "no"
-                    ? "text-muted-red bg-muted-red/10"
-                    : "text-gray-500 bg-gray-100";
-
-              return (
-                <div
-                  key={c.id}
-                  className="glass-card-dash rounded-2xl p-5 border border-black/5"
-                >
-                  {/* Header */}
-                  <div className="flex items-center justify-between mb-3">
-                    <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-full ${badge.style}`}>
-                      {badge.label}
-                    </span>
-                    <span className="text-[10px] text-gray-400 font-mono">
-                      {formatDate(c.detected_at)}
-                    </span>
-                  </div>
-
-                  {/* Title */}
-                  <h4 className="text-sm font-semibold text-pure-black mb-2 leading-snug">
-                    {c.description}
-                  </h4>
-
-                  {/* Speech vs Vote */}
-                  {(c.severity === "high" || c.severity === "critical") && (
-                    <div className="mt-3 space-y-2">
-                      <div className="bg-white/50 rounded-xl p-3 border border-black/5">
-                        <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-1">Declaración pública</p>
-                        <p className="text-xs text-gray-600 italic leading-relaxed">
-                          &ldquo;{c.speech_stance}&rdquo;
-                        </p>
-                      </div>
-                      <div className="flex items-center justify-end gap-2">
-                        <span className="text-[10px] text-gray-400">Voto en recinto:</span>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${voteColor}`}>
-                          <span className="material-symbols-outlined text-[11px] align-middle mr-0.5">
-                            {c.vote_position === "yes" ? "thumb_up" : "thumb_down"}
-                          </span>
-                          {voteLabel} (+{Math.round(c.similarity_score * 100)}%)
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {(c.severity === "medium" || c.severity === "low") && (
-                    <p className="text-xs text-gray-500 leading-relaxed mt-1">
-                      Mantuvo posición de &ldquo;{c.speech_stance}&rdquo; votando {c.vote_position === "yes" ? "a favor" : "en contra"}.
-                    </p>
-                  )}
-
-                  <button className="mt-3 text-[10px] text-gray-400 hover:text-pure-black transition-colors flex items-center gap-1">
-                    Ver fuentes
-                    <span className="material-symbols-outlined text-[12px]">open_in_new</span>
-                  </button>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </div>
+      </Section>
 
       {/* ── Share Card ─────────────────────────────────────── */}
       <ShareCard politician={politician} />

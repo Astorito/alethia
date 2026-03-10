@@ -4,29 +4,162 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-const navigation = [
-  { name: "Panorama", href: "/dashboard", icon: "dashboard" },
-  { name: "Mis Temas", href: "/dashboard/topics/following", icon: "bookmarks" },
-  { name: "Temas", href: "/dashboard/topics", icon: "category" },
-  { name: "Legisladores", href: "/dashboard/politicians", icon: "library_books" },
-  { name: "Ejecutivo Nacional", href: "/dashboard/executive", icon: "account_balance" },
-  { name: "Análisis", href: "/dashboard/analytics", icon: "bar_chart" },
-  { name: "Hoy en el Congreso", href: "/dashboard/congress", icon: "today" },
-  { name: "Ranking", href: "/dashboard/ranking", icon: "monitoring" },
-  { name: "Comparador", href: "/dashboard/compare", icon: "forum" },
+// Estructura de navegación basada en el mapa de la plataforma
+// 7 dominios principales: Panorama, Legisladores, Ejecutivo, Temas, Análisis, Ranking, Alertas
+
+const mainNavigation = [
+  { 
+    name: "Panorama", 
+    href: "/dashboard", 
+    icon: "dashboard",
+    description: "Vista general"
+  },
+  { 
+    name: "Legisladores", 
+    href: "/dashboard/politicians", 
+    icon: "library_books",
+    description: "Perfiles y seguimiento"
+  },
+  { 
+    name: "Ejecutivo Nacional", 
+    href: "/dashboard/executive", 
+    icon: "account_balance",
+    description: "Poder Ejecutivo"
+  },
+  { 
+    name: "Temas", 
+    href: "/dashboard/topics", 
+    icon: "category",
+    description: "Foros y debates"
+  },
 ];
 
-const bottomNavigation = [
-  { name: "Alertas", href: "/dashboard/alerts", icon: "notifications" },
+const analyticsNavigation = [
+  { 
+    name: "Análisis", 
+    href: "/dashboard/analytics", 
+    icon: "bar_chart",
+    description: "Visualizaciones"
+  },
+  { 
+    name: "Ranking", 
+    href: "/dashboard/ranking", 
+    icon: "monitoring",
+    description: "Métricas y posiciones"
+  },
 ];
+
+const dailyNavigation = [
+  { 
+    name: "Hoy en el Congreso", 
+    href: "/dashboard/congress", 
+    icon: "today",
+    description: "Actividad del día"
+  },
+];
+
+const toolsNavigation = [
+  { 
+    name: "Comparador", 
+    href: "/dashboard/compare", 
+    icon: "forum",
+    description: "Comparar legisladores"
+  },
+  { 
+    name: "Mis Temas", 
+    href: "/dashboard/topics/following", 
+    icon: "bookmarks",
+    description: "Seguimiento personal"
+  },
+];
+
+const alertsNavigation = [
+  { 
+    name: "Alertas", 
+    href: "/dashboard/alerts", 
+    icon: "notifications",
+    description: "Notificaciones"
+  },
+];
+
+function NavItem({ 
+  item, 
+  pathname,
+  isNested = false 
+}: { 
+  item: { name: string; href: string; icon: string; description?: string }; 
+  pathname: string;
+  isNested?: boolean;
+}) {
+  const isActive =
+    pathname === item.href ||
+    (item.href !== "/dashboard" &&
+      item.href !== "/dashboard/topics" &&
+      pathname.startsWith(item.href)) ||
+    (item.href === "/dashboard/topics" &&
+      (pathname === "/dashboard/topics" ||
+        (pathname.startsWith("/dashboard/topics/") &&
+          !pathname.startsWith("/dashboard/topics/following"))));
+
+  return (
+    <Link
+      href={item.href}
+      className={cn(
+        "flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all group",
+        isActive
+          ? "text-black bg-white/50 rounded-xl shadow-sm border border-black/5"
+          : "text-gray-500 hover:text-black hover:bg-white/30",
+        isNested && "ml-2"
+      )}
+    >
+      <span className={cn(
+        "material-symbols-outlined text-[20px]",
+        isActive ? "text-black" : "text-gray-400 group-hover:text-gray-600"
+      )}>
+        {item.icon}
+      </span>
+      <div className="flex flex-col">
+        <span>{item.name}</span>
+        {item.description && (
+          <span className="text-[10px] text-gray-400 font-normal leading-tight">
+            {item.description}
+          </span>
+        )}
+      </div>
+    </Link>
+  );
+}
+
+function NavSection({ 
+  title, 
+  children 
+}: { 
+  title?: string; 
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="mb-4">
+      {title && (
+        <div className="px-3 mb-2">
+          <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+            {title}
+          </span>
+        </div>
+      )}
+      <div className="space-y-0.5">
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export function DashboardSidebar() {
   const pathname = usePathname();
 
   return (
     <aside className="glass-sidebar w-64 h-screen fixed left-0 top-0 flex flex-col z-50">
-      <div className="p-8 pb-4">
-        <Link href="/dashboard" className="flex items-center gap-2 mb-10">
+      <div className="p-6 pb-4">
+        <Link href="/dashboard" className="flex items-center gap-2 mb-8">
           <div className="size-6 text-black opacity-80">
             <svg
               className="w-full h-full"
@@ -47,59 +180,48 @@ export function DashboardSidebar() {
           </h2>
         </Link>
       </div>
-      <nav className="flex-1 px-4 space-y-0.5 overflow-y-auto">
-        {navigation.map((item) => {
-          const isActive =
-            pathname === item.href ||
-            (item.href !== "/dashboard" &&
-              item.href !== "/dashboard/topics" &&
-              pathname.startsWith(item.href)) ||
-            (item.href === "/dashboard/topics" &&
-              (pathname === "/dashboard/topics" ||
-                (pathname.startsWith("/dashboard/topics/") &&
-                  !pathname.startsWith("/dashboard/topics/following"))));
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all",
-                isActive
-                  ? "text-black bg-white/50 rounded-xl shadow-sm border border-black/5"
-                  : "text-gray-500 hover:text-black hover:bg-white/30"
-              )}
-            >
-              <span className="material-symbols-outlined text-[20px]">
-                {item.icon}
-              </span>
-              {item.name}
-            </Link>
-          );
-        })}
+
+      <nav className="flex-1 px-3 overflow-y-auto thin-scrollbar">
+        {/* Dominios principales del mapa */}
+        <NavSection>
+          {mainNavigation.map((item) => (
+            <NavItem key={item.name} item={item} pathname={pathname} />
+          ))}
+        </NavSection>
+
+        {/* Análisis y métricas */}
+        <NavSection title="Análisis">
+          {analyticsNavigation.map((item) => (
+            <NavItem key={item.name} item={item} pathname={pathname} />
+          ))}
+        </NavSection>
+
+        {/* Actividad diaria */}
+        <NavSection title="Hoy">
+          {dailyNavigation.map((item) => (
+            <NavItem key={item.name} item={item} pathname={pathname} />
+          ))}
+        </NavSection>
+
+        {/* Herramientas personales */}
+        <NavSection title="Herramientas">
+          {toolsNavigation.map((item) => (
+            <NavItem key={item.name} item={item} pathname={pathname} />
+          ))}
+        </NavSection>
       </nav>
-      <div className="px-4 pb-2 border-t border-black/5 pt-2">
-        {bottomNavigation.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href);
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all",
-                isActive
-                  ? "text-black bg-white/50 shadow-sm border border-black/5"
-                  : "text-gray-500 hover:text-black hover:bg-white/30"
-              )}
-            >
-              <span className="material-symbols-outlined text-[20px]">
-                {item.icon}
-              </span>
-              {item.name}
-            </Link>
-          );
-        })}
+
+      {/* Alertas - siempre visible abajo */}
+      <div className="px-3 pb-4 border-t border-black/5 pt-4">
+        <NavSection>
+          {alertsNavigation.map((item) => (
+            <NavItem key={item.name} item={item} pathname={pathname} />
+          ))}
+        </NavSection>
       </div>
-      <div className="p-6 border-t border-black/5">
+
+      {/* Perfil de usuario */}
+      <div className="p-4 border-t border-black/5">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden">
             <img

@@ -13,6 +13,12 @@ export function formatDate(dateStr: string): string {
   });
 }
 
+export function mandateRange(startedAt: string, endedAt: string | null): string {
+  const start = new Date(startedAt).getFullYear();
+  const end = endedAt ? new Date(endedAt).getFullYear() : new Date().getFullYear() + 1;
+  return `${start}-${end}`;
+}
+
 export function getGradeColor(grade: string): string {
   if (grade.startsWith("A")) return "text-emerald-500";
   if (grade.startsWith("B")) return "text-blue-500";

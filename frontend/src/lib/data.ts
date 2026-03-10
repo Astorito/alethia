@@ -397,3 +397,52 @@ export function getUserAlerts(): UserAlert[] {
 export function getUnreadAlertsCount(): number {
   return (data.user_alerts ?? []).filter((a) => !a.read).length;
 }
+
+// ─── Funciones adicionales para nuevas vistas ─────────────────
+
+export function getRecentBills(limit = 10): Bill[] {
+  return data.bills
+    .sort((a, b) => new Date(b.introduced_at).getTime() - new Date(a.introduced_at).getTime())
+    .slice(0, limit);
+}
+
+export function getMostActivePoliticians(limit = 5): PoliticianWithParty[] {
+  return getAllPoliticians()
+    .sort((a, b) => b.activity_score - a.activity_score)
+    .slice(0, limit);
+}
+
+export function getTopicStats(topicId: string): {
+  mentionCount: number;
+  billCount: number;
+  speechCount: number;
+  activePoliticians: number;
+  gapRatio: number;
+} {
+  const topic = data.topics.find((t) => t.id === topicId);
+  if (!topic) {
+    return { mentionCount: 0, billCount: 0, speechCount: 0, activePoliticians: 0, gapRatio: 0 };
+  }
+
+  const gap = data.discourse_gaps.find((g) => g.topic_id === topicId);
+
+  return {
+    mentionCount: topic.mention_count,
+    billCount: topic.bill_count,
+    speechCount: topic.speech_count,
+    activePoliticians: data.consistency_scores.filter((cs) => cs.topic_id === topicId).length,
+    gapRatio: gap?.gap_ratio ?? 0,
+  };
+}
+
+export function getPartyAlignmentRate(partyA: string, partyB: string): number {
+  const alliances = data.alliance_scores.filter(
+    (al) =>
+      (al.politician_a_id.startsWith(partyA) && al.politician_b_id.startsWith(partyB)) ||
+      (al.politician_a_id.startsWith(partyB) && al.politician_b_id.startsWith(partyA))
+  );
+  
+  if (alliances.length === 0) return 0;
+  
+  return alliances.reduce((sum, al) => sum + al.alignment_rate, 0) / alliances.length;
+}

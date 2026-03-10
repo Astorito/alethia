@@ -9,16 +9,33 @@ interface AlertData {
   description: string;
   read: boolean;
   relativeTime: string;
+  category: string;
   meta: { icon: string; bg: string; text: string; label: string };
 }
 
 interface Props {
   alerts: AlertData[];
+  categoryCounts: {
+    all: number;
+    votaciones: number;
+    proyectos: number;
+    intervenciones: number;
+    contradicciones: number;
+  };
 }
 
-export function AlertsClient({ alerts: initialAlerts }: Props) {
+const typeFilters = [
+  { id: "all", name: "Todas", icon: "notifications" },
+  { id: "votaciones", name: "Votaciones", icon: "how_to_vote" },
+  { id: "proyectos", name: "Proyectos", icon: "description" },
+  { id: "intervenciones", name: "Intervenciones", icon: "record_voice_over" },
+  { id: "contradicciones", name: "Contradicciones", icon: "warning" },
+];
+
+export function AlertsClient({ alerts: initialAlerts, categoryCounts }: Props) {
   const [alerts, setAlerts] = useState(initialAlerts);
-  const [filter, setFilter] = useState<"all" | "unread" | "read">("all");
+  const [readFilter, setReadFilter] = useState<"all" | "unread" | "read">("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
 
   const markAllRead = () => {
     setAlerts((prev) => prev.map((a) => ({ ...a, read: true })));
@@ -28,9 +45,15 @@ export function AlertsClient({ alerts: initialAlerts }: Props) {
     setAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, read: true } : a)));
   };
 
+  // Filtrar por tipo y estado de lectura
   const filtered = alerts.filter((a) => {
-    if (filter === "unread") return !a.read;
-    if (filter === "read") return a.read;
+    // Filtro por estado
+    if (readFilter === "unread") return !a.read;
+    if (readFilter === "read") return a.read;
+    
+    // Filtro por tipo/categoría
+    if (typeFilter !== "all" && a.category !== typeFilter) return false;
+    
     return true;
   });
 
@@ -38,14 +61,43 @@ export function AlertsClient({ alerts: initialAlerts }: Props) {
 
   return (
     <div>
+      {/* Filtros por tipo (según mapa) */}
+      <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+        {typeFilters.map((filter) => {
+          const count = categoryCounts[filter.id as keyof typeof categoryCounts];
+          return (
+            <button
+              key={filter.id}
+              onClick={() => setTypeFilter(filter.id)}
+              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl whitespace-nowrap transition-all ${
+                typeFilter === filter.id
+                  ? "bg-pure-black text-white"
+                  : "bg-white/60 text-gray-600 hover:bg-white/80 border border-black/5"
+              }`}
+            >
+              <span className="material-symbols-outlined text-[16px]">{filter.icon}</span>
+              {filter.name}
+              {count > 0 && (
+                <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                  typeFilter === filter.id ? "bg-white/20" : "bg-gray-100"
+                }`}>
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Filtros por estado de lectura + acciones */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex gap-1 bg-black/4 rounded-xl p-1">
           {(["all", "unread", "read"] as const).map((f) => (
             <button
               key={f}
-              onClick={() => setFilter(f)}
+              onClick={() => setReadFilter(f)}
               className={`px-4 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                filter === f
+                readFilter === f
                   ? "bg-white text-pure-black shadow-sm"
                   : "text-gray-400 hover:text-gray-700"
               }`}
@@ -65,6 +117,7 @@ export function AlertsClient({ alerts: initialAlerts }: Props) {
         )}
       </div>
 
+      {/* Lista de alertas */}
       {filtered.length === 0 ? (
         <div className="glass-card-dash rounded-2xl p-12 text-center">
           <span className="material-symbols-outlined text-4xl text-gray-300 mb-3 block">
