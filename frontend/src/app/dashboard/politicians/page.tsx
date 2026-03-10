@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Search, SlidersHorizontal, X, ArrowUpDown } from "lucide-react";
 import { PoliticianSphere } from "@/components/politicians/politician-sphere";
-import { LegislatorModal } from "@/components/politicians/legislator-modal";
 import { PoliticianCard } from "@/components/politicians/politician-card";
 import { filterPoliticians, getAllParties, getAllProvinces } from "@/lib/data";
 import type { PoliticianWithParty } from "@/lib/types";
@@ -11,6 +11,7 @@ import type { PoliticianWithParty } from "@/lib/types";
 const BASE = "/dashboard/politicians";
 
 export default function DashboardPoliticiansPage() {
+  const router = useRouter();
   const [filters, setFilters] = useState({
     party: "",
     province: "",
@@ -18,9 +19,12 @@ export default function DashboardPoliticiansPage() {
     sortBy: "score" as "name" | "score" | "activity",
     sortDir: "desc" as "asc" | "desc",
   });
-  const [selectedPolitician, setSelectedPolitician] = useState<PoliticianWithParty | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<"sphere" | "grid">("sphere");
+
+  const handleSelect = (politician: PoliticianWithParty) => {
+    router.push(`${BASE}/${politician.id}`);
+  };
 
   const politicians = useMemo(() => filterPoliticians(filters), [filters]);
   const parties = getAllParties();
@@ -236,7 +240,7 @@ export default function DashboardPoliticiansPage() {
         {viewMode === "sphere" ? (
           <PoliticianSphere 
             politicians={politicians} 
-            onSelect={setSelectedPolitician}
+            onSelect={handleSelect}
           />
         ) : (
           <div className="h-full overflow-y-auto p-6">
@@ -244,7 +248,7 @@ export default function DashboardPoliticiansPage() {
               {politicians.map((politician) => (
                 <div 
                   key={politician.id}
-                  onClick={() => setSelectedPolitician(politician)}
+                  onClick={() => handleSelect(politician)}
                   className="cursor-pointer"
                 >
                   <PoliticianCard politician={politician} />
@@ -261,12 +265,6 @@ export default function DashboardPoliticiansPage() {
           </div>
         )}
       </div>
-
-      {/* Modal */}
-      <LegislatorModal 
-        politician={selectedPolitician} 
-        onClose={() => setSelectedPolitician(null)} 
-      />
     </div>
   );
 }

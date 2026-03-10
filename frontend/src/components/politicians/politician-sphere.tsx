@@ -38,8 +38,9 @@ export function PoliticianSphere({ politicians, onSelect }: PoliticianSphereProp
   const animRef = useRef<number>(0);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
-  const RADIUS = 320;
-  const displayPoliticians = politicians.slice(0, 40);
+  // 20% smaller radius (was 320, now 256) and 50 cards with tighter packing
+  const RADIUS = 256;
+  const displayPoliticians = politicians.slice(0, 50);
   const positions = getSpherePositions(displayPoliticians.length, RADIUS);
 
   // Auto-rotate with inertia
