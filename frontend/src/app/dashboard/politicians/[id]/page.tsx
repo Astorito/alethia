@@ -268,9 +268,9 @@ export default async function DashboardPoliticianPage({ params }: PoliticianPage
               <span className="text-[10px] uppercase tracking-wider text-gray-400 font-medium">Proyectos</span>
             </div>
             <p className="text-3xl font-mono font-semibold text-pure-black leading-none">
-              {politician.speeches.filter(s => s.summary?.toLowerCase().includes("proyecto")).length || "—"}
+              —
             </p>
-            <p className="text-xs mt-2 text-gray-400">Presentados</p>
+            <p className="text-xs mt-2 text-gray-400">En desarrollo</p>
           </div>
         </div>
       </Section>
