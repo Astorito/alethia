@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { ExecutiveAuthority } from "@/lib/types";
 
@@ -11,171 +11,149 @@ interface DepthDeckCarouselProps {
   onSelect: (authority: ExecutiveAuthority) => void;
 }
 
-export function DepthDeckCarousel({ authorities, onSelect }: DepthDeckCarouselProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
+const CARD_WIDTH = 260;
+// How much each side card shifts from center — less than card width = overlap
+const STEP = 200;
+// How many cards to show on each side
+const SIDE_COUNT = 2;
 
-  const itemWidth = 280;
-  const gap = 24;
-  const visibleCount = 4;
+function getCardTransform(offset: number): {
+  x: number;
+  scale: number;
+  opacity: number;
+  blur: number;
+  zIndex: number;
+} {
+  const abs = Math.abs(offset);
 
-  const maxIndex = Math.max(0, authorities.length - visibleCount);
-
-  const handlePrev = () => {
-    setCurrentIndex((prev) => Math.max(0, prev - 1));
-  };
-
-  const handleNext = () => {
-    setCurrentIndex((prev) => Math.min(maxIndex, prev + 1));
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    setStartX(e.clientX);
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    const diff = startX - e.clientX;
-    if (Math.abs(diff) > 50) {
-      if (diff > 0) {
-        handleNext();
-      } else {
-        handlePrev();
-      }
-      setIsDragging(false);
-    }
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setStartX(e.touches[0].clientX);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    const diff = startX - e.touches[0].clientX;
-    if (Math.abs(diff) > 50) {
-      if (diff > 0) {
-        handleNext();
-      } else {
-        handlePrev();
-      }
-    }
-  };
-
-  const getCardStyle = (index: number) => {
-    const relativeIndex = index - currentIndex;
-    const isVisible = relativeIndex >= -1 && relativeIndex < visibleCount + 1;
-    
-    if (!isVisible) {
-      return {
-        opacity: 0,
-        scale: 0.7,
-        zIndex: 0,
-        x: relativeIndex < 0 ? -400 : 400,
-        filter: "blur(8px)",
-      };
-    }
-
-    // Center the visible cards
-    const centerIndex = (visibleCount - 1) / 2; // 1.5 for 4 visible cards
-    const centerOffset = relativeIndex - centerIndex;
-    
-    // Depth effects - more pronounced
-    const depthScale = 1 - Math.abs(centerOffset) * 0.08;
-    const depthOpacity = relativeIndex >= 0 && relativeIndex < visibleCount 
-      ? 1 - Math.abs(centerOffset) * 0.2 
-      : 0.3;
-    const depthBlur = Math.abs(centerOffset) * 2;
-    const depthZIndex = 20 - Math.abs(Math.round(centerOffset * 5));
-    
-    // X position calculation to center the group
-    // Start from center and offset by relative position
-    const baseX = centerOffset * (itemWidth + gap);
-    
+  if (abs === 0) {
+    return { x: 0, scale: 1, opacity: 1, blur: 0, zIndex: 30 };
+  }
+  if (abs === 1) {
     return {
-      opacity: depthOpacity,
-      scale: Math.max(0.85, depthScale),
-      zIndex: depthZIndex,
-      x: baseX,
-      filter: `blur(${Math.min(depthBlur, 4)}px)`,
+      x: offset * STEP,
+      scale: 0.88,
+      opacity: 0.72,
+      blur: 1.5,
+      zIndex: 20,
     };
+  }
+  if (abs === 2) {
+    return {
+      x: offset * STEP,
+      scale: 0.76,
+      opacity: 0.45,
+      blur: 3.5,
+      zIndex: 10,
+    };
+  }
+  // Hidden
+  return {
+    x: offset < 0 ? -(STEP * 3.5) : STEP * 3.5,
+    scale: 0.65,
+    opacity: 0,
+    blur: 8,
+    zIndex: 0,
+  };
+}
+
+export function DepthDeckCarousel({ authorities, onSelect }: DepthDeckCarouselProps) {
+  const [active, setActive] = useState(0);
+  const [startX, setStartX] = useState(0);
+
+  const prev = () => setActive((i) => Math.max(0, i - 1));
+  const next = () => setActive((i) => Math.min(authorities.length - 1, i + 1));
+
+  const handleMouseDown = (e: React.MouseEvent) => setStartX(e.clientX);
+  const handleMouseUp = (e: React.MouseEvent) => {
+    const diff = startX - e.clientX;
+    if (diff > 50) next();
+    else if (diff < -50) prev();
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) =>
+    setStartX(e.touches[0].clientX);
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const diff = startX - e.changedTouches[0].clientX;
+    if (diff > 40) next();
+    else if (diff < -40) prev();
   };
 
   return (
-    <div className="relative w-full">
-      {/* Navigation Arrows */}
+    <div className="relative w-full select-none">
+      {/* Prev */}
       <button
-        onClick={handlePrev}
-        disabled={currentIndex === 0}
-        className={`absolute left-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-          currentIndex === 0
+        onClick={prev}
+        disabled={active === 0}
+        className={`absolute left-0 top-1/2 -translate-y-1/2 z-40 w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-md ${
+          active === 0
             ? "bg-gray-100 text-gray-300 cursor-not-allowed"
-            : "bg-white shadow-lg text-gray-700 hover:bg-gray-50 hover:scale-110"
+            : "bg-white text-gray-700 hover:bg-gray-50 hover:scale-110"
         }`}
       >
         <ChevronLeft className="w-5 h-5" />
       </button>
 
+      {/* Next */}
       <button
-        onClick={handleNext}
-        disabled={currentIndex >= maxIndex}
-        className={`absolute right-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-          currentIndex >= maxIndex
+        onClick={next}
+        disabled={active >= authorities.length - 1}
+        className={`absolute right-0 top-1/2 -translate-y-1/2 z-40 w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-md ${
+          active >= authorities.length - 1
             ? "bg-gray-100 text-gray-300 cursor-not-allowed"
-            : "bg-white shadow-lg text-gray-700 hover:bg-gray-50 hover:scale-110"
+            : "bg-white text-gray-700 hover:bg-gray-50 hover:scale-110"
         }`}
       >
         <ChevronRight className="w-5 h-5" />
       </button>
 
-      {/* Carousel Container */}
+      {/* Stage */}
       <div
-        ref={containerRef}
         className="relative h-[340px] overflow-hidden cursor-grab active:cursor-grabbing"
         onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
         onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         <div className="absolute inset-0 flex items-center justify-center">
-          <AnimatePresence>
-            {authorities.map((authority, index) => {
-              const style = getCardStyle(index);
-              
-              return (
-                <motion.div
-                  key={authority.id}
-                  className="absolute top-0 left-0 w-[280px]"
-                  initial={false}
-                  animate={{
-                    x: style.x,
-                    opacity: style.opacity,
-                    scale: style.scale,
-                    zIndex: style.zIndex,
-                    filter: style.filter,
-                  }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 300,
-                    damping: 30,
-                  }}
-                  onClick={() => onSelect(authority)}
-                  style={{ 
-                    cursor: isDragging ? "grabbing" : "pointer",
-                    transformStyle: "preserve-3d",
-                  }}
+          {authorities.map((authority, index) => {
+            const offset = index - active;
+            if (Math.abs(offset) > SIDE_COUNT + 1) return null;
+
+            const t = getCardTransform(offset);
+
+            return (
+              <motion.div
+                key={authority.id}
+                className="absolute"
+                style={{ width: CARD_WIDTH, pointerEvents: t.opacity < 0.1 ? "none" : "auto" }}
+                animate={{
+                  x: t.x,
+                  scale: t.scale,
+                  opacity: t.opacity,
+                  zIndex: t.zIndex,
+                  filter: `blur(${t.blur}px)`,
+                }}
+                transition={{ type: "spring", stiffness: 320, damping: 35 }}
+                onClick={() => {
+                  if (offset === 0) onSelect(authority);
+                  else setActive(index);
+                }}
+              >
+                <div
+                  className={`rounded-2xl border transition-all duration-300 overflow-hidden bg-white ${
+                    offset === 0
+                      ? "shadow-2xl border-black/8 ring-1 ring-black/5"
+                      : "shadow-md border-black/5"
+                  }`}
                 >
-                  <div className="glass-card-dash p-6 rounded-2xl border border-black/5 hover:border-black/10 hover:shadow-xl transition-all duration-300 group">
-                    {/* Photo */}
-                    <div className="relative w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden bg-gray-100 ring-4 ring-white shadow-lg group-hover:scale-105 transition-transform">
+                  {/* Photo area */}
+                  <div className="flex flex-col items-center pt-8 px-6 pb-6">
+                    <div
+                      className={`relative rounded-full overflow-hidden bg-gray-100 mb-4 ring-4 ring-white shadow-lg transition-transform duration-300 ${
+                        offset === 0 ? "w-28 h-28" : "w-20 h-20"
+                      }`}
+                    >
                       <Image
                         src={authority.photo_url}
                         alt={authority.full_name}
@@ -184,50 +162,59 @@ export function DepthDeckCarousel({ authorities, onSelect }: DepthDeckCarouselPr
                       />
                     </div>
 
-                    {/* Info */}
-                    <div className="text-center">
-                      <h3 className="font-serif text-lg font-semibold text-pure-black mb-1 truncate">
-                        {authority.full_name}
-                      </h3>
-                      <p className="text-sm text-gray-500 line-clamp-1 mb-2">
-                        {authority.ministry_or_area || authority.role_title}
-                      </p>
-                      <p className="text-xs text-gray-400 font-mono">
-                        {new Date(authority.started_at).getFullYear()}–{authority.ended_at ? new Date(authority.ended_at).getFullYear() : "Presente"}
-                      </p>
-                    </div>
+                    <h3
+                      className={`font-serif font-semibold text-center text-pure-black leading-tight mb-1 ${
+                        offset === 0 ? "text-lg" : "text-sm"
+                      }`}
+                    >
+                      {authority.full_name}
+                    </h3>
 
-                    {/* Hover indicator */}
-                    <div className="mt-4 pt-4 border-t border-black/5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span className="text-xs text-blue-600 font-medium flex items-center justify-center gap-1">
-                        Ver perfil completo
-                        <ChevronRight className="w-3 h-3" />
-                      </span>
-                    </div>
+                    <p
+                      className={`text-center text-gray-500 line-clamp-1 mb-2 ${
+                        offset === 0 ? "text-sm" : "text-xs"
+                      }`}
+                    >
+                      {authority.ministry_or_area || authority.role_title}
+                    </p>
+
+                    <p className="text-xs text-gray-400 font-mono">
+                      {new Date(authority.started_at).getFullYear()}–
+                      {authority.ended_at
+                        ? new Date(authority.ended_at).getFullYear()
+                        : "Presente"}
+                    </p>
                   </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
+
+                  {/* Footer — only center card */}
+                  {offset === 0 && (
+                    <div className="border-t border-black/5 px-6 py-3 flex items-center justify-center gap-1">
+                      <span className="text-xs text-blue-600 font-medium">
+                        Ver perfil completo
+                      </span>
+                      <ChevronRight className="w-3 h-3 text-blue-600" />
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
       </div>
 
-      {/* Scrollbar indicator */}
-      <div className="mt-4 mx-12 h-1 bg-gray-200 rounded-full overflow-hidden">
-        <motion.div
-          className="h-full bg-gray-400 rounded-full"
-          animate={{
-            width: `${((currentIndex + visibleCount) / authorities.length) * 100}%`,
-            x: `${(currentIndex / authorities.length) * 100}%`,
-          }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          style={{ width: `${(visibleCount / authorities.length) * 100}%` }}
-        />
-      </div>
-
-      {/* Card count indicator */}
-      <div className="mt-2 text-center text-xs text-gray-400">
-        {currentIndex + 1}–{Math.min(currentIndex + visibleCount, authorities.length)} de {authorities.length} ministros
+      {/* Dots indicator */}
+      <div className="flex items-center justify-center gap-1.5 mt-3">
+        {authorities.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setActive(i)}
+            className={`rounded-full transition-all duration-300 ${
+              i === active
+                ? "w-5 h-1.5 bg-gray-600"
+                : "w-1.5 h-1.5 bg-gray-300 hover:bg-gray-400"
+            }`}
+          />
+        ))}
       </div>
     </div>
   );
