@@ -39,19 +39,23 @@ export function PoliticianSphere({ politicians, onSelect }: PoliticianSphereProp
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   const RADIUS = 320;
-  const displayPoliticians = politicians.slice(0, 30);
+  const displayPoliticians = politicians.slice(0, 40);
   const positions = getSpherePositions(displayPoliticians.length, RADIUS);
 
   // Auto-rotate with inertia
+  // No auto-rotate: only inertia decay when not dragging
   const animate = useCallback(() => {
     if (!isDragging.current) {
-      velRef.current.y = velRef.current.y * 0.97 + 0.08; // slow auto-rotate + inertia decay
-      velRef.current.x *= 0.96;
-      rotRef.current.y += velRef.current.y;
-      rotRef.current.x += velRef.current.x;
-      rotRef.current.x = Math.max(-30, Math.min(30, rotRef.current.x));
-      setRotY(rotRef.current.y);
-      setRotX(rotRef.current.x);
+      // Inertia only, no auto-rotation
+      velRef.current.y *= 0.92;
+      velRef.current.x *= 0.92;
+      if (Math.abs(velRef.current.y) > 0.01 || Math.abs(velRef.current.x) > 0.01) {
+        rotRef.current.y += velRef.current.y;
+        rotRef.current.x += velRef.current.x;
+        rotRef.current.x = Math.max(-30, Math.min(30, rotRef.current.x));
+        setRotY(rotRef.current.y);
+        setRotX(rotRef.current.x);
+      }
     }
     animRef.current = requestAnimationFrame(animate);
   }, []);

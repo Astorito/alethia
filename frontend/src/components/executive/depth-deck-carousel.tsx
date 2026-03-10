@@ -11,7 +11,7 @@ interface DepthDeckCarouselProps {
   onSelect: (authority: ExecutiveAuthority) => void;
 }
 
-const CARD_WIDTH = 260;
+const CARD_WIDTH = 220;
 // How much each side card shifts from center — less than card width = overlap
 const STEP = 200;
 // How many cards to show on each side
@@ -26,14 +26,15 @@ function getCardTransform(offset: number): {
 } {
   const abs = Math.abs(offset);
 
+  // All cards have 15% transparency (85% opacity)
   if (abs === 0) {
-    return { x: 0, scale: 1, opacity: 1, blur: 0, zIndex: 30 };
+    return { x: 0, scale: 1, opacity: 0.85, blur: 0, zIndex: 30 };
   }
   if (abs === 1) {
     return {
       x: offset * STEP,
       scale: 0.88,
-      opacity: 0.72,
+      opacity: 0.85,
       blur: 1.5,
       zIndex: 20,
     };
@@ -42,7 +43,7 @@ function getCardTransform(offset: number): {
     return {
       x: offset * STEP,
       scale: 0.76,
-      opacity: 0.45,
+      opacity: 0.85,
       blur: 3.5,
       zIndex: 10,
     };
