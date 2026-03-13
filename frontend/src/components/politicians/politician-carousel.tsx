@@ -19,11 +19,12 @@ const CFG = {
   sideZStep: 18,      // px  z-recession per card outward
   maxRotDeg: 72,      // max Y-rotation for far cards
   rotCurve: 1.1,      // exponential curve speed
-  springK: 0.042,     // global scroll spring stiffness
-  springD: 0.74,      // global scroll spring damping
-  cardSpringK: 0.07,  // per-card spring stiffness
-  cardSpringD: 0.80,  // per-card spring damping
+  springK: 0.028,     // global scroll spring — más suave para ver el movimiento
+  springD: 0.78,      // global scroll spring damping
+  cardSpringK: 0.055, // per-card spring — más suave
+  cardSpringD: 0.82,  // per-card spring damping
   opacityStep: 0.055, // opacity fade per card slot outward
+  snapDelay: 500,     // ms antes de snap al entero más cercano
 };
 
 function rotForDist(d: number): number {
@@ -80,10 +81,11 @@ export function PoliticianCarousel({ politicians, onSelect }: PoliticianCarousel
     Array.from({ length: CFG.poolSize }, (_, i) => i % total)
   );
 
-  // Touch tracking
+  // Touch / drag tracking
   const touchLast    = useRef(0);
   const touchHistory = useRef<{ v: number; t: number }[]>([]);
   const wheelTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const didDrag      = useRef(false); // guard: prevent click after drag
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -169,21 +171,27 @@ export function PoliticianCarousel({ politicians, onSelect }: PoliticianCarousel
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
+      didDrag.current = true;
       scrollTarget.current += e.deltaY * 0.007;
       if (wheelTimer.current) clearTimeout(wheelTimer.current);
+      // Snap al entero más cercano sólo después de que el usuario pare
       wheelTimer.current = setTimeout(() => {
         scrollTarget.current = Math.round(scrollTarget.current);
-      }, 120);
+        // Resetear drag guard un poco después del snap
+        setTimeout(() => { didDrag.current = false; }, 100);
+      }, CFG.snapDelay);
     };
 
     const onTouchStart = (e: TouchEvent) => {
       touchLast.current = e.touches[0].clientX;
       touchHistory.current = [];
       scrollVel.current = 0;
+      didDrag.current = false;
     };
 
     const onTouchMove = (e: TouchEvent) => {
       const dx = touchLast.current - e.touches[0].clientX;
+      if (Math.abs(dx) > 3) didDrag.current = true;
       const dv = dx / el.clientWidth * 9;
       scrollTarget.current += dv;
       touchHistory.current.push({ v: dv, t: performance.now() });
@@ -195,7 +203,10 @@ export function PoliticianCarousel({ politicians, onSelect }: PoliticianCarousel
       const recent = touchHistory.current.filter(h => performance.now() - h.t < 100);
       const fling  = recent.length ? recent.reduce((a, b) => a + b.v, 0) / recent.length : 0;
       scrollTarget.current += fling * 6;
-      setTimeout(() => { scrollTarget.current = Math.round(scrollTarget.current); }, 400);
+      setTimeout(() => {
+        scrollTarget.current = Math.round(scrollTarget.current);
+        setTimeout(() => { didDrag.current = false; }, 100);
+      }, CFG.snapDelay);
     };
 
     el.addEventListener("wheel", onWheel, { passive: false });
@@ -213,6 +224,7 @@ export function PoliticianCarousel({ politicians, onSelect }: PoliticianCarousel
 
   // ── Click handler ────────────────────────────────────────────
   const handleCardClick = useCallback((slotIdx: number) => {
+    if (didDrag.current) return; // ignorar clicks que son parte de un scroll
     const polIdx = slotIndex.current[slotIdx];
     if (politicians[polIdx]) onSelect(politicians[polIdx]);
   }, [politicians, onSelect]);
