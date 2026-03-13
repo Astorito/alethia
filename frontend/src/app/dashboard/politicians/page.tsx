@@ -3,8 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Search, SlidersHorizontal, X, ArrowUpDown } from "lucide-react";
-import { PoliticianSphere } from "@/components/politicians/politician-sphere";
-import { PoliticianCard } from "@/components/politicians/politician-card";
+import { PoliticianCarousel } from "@/components/politicians/politician-carousel";import { PoliticianCard } from "@/components/politicians/politician-card";
 import { filterPoliticians, getAllParties, getAllProvinces } from "@/lib/data-supabase";
 import type { PoliticianWithParty } from "@/lib/types";
 
