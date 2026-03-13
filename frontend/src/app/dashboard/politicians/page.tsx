@@ -25,7 +25,7 @@ export default function DashboardPoliticiansPage() {
     sortDir: "desc" as "asc" | "desc",
   });
   const [showFilters, setShowFilters] = useState(false);
-  const [viewMode, setViewMode] = useState<"sphere" | "grid">("sphere");
+  const [viewMode, setViewMode] = useState<"carousel" | "grid">("carousel");
 
   // Cargar datos al montar
   useEffect(() => {
@@ -139,14 +139,14 @@ export default function DashboardPoliticiansPage() {
           {/* View mode toggle */}
           <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
             <button
-              onClick={() => setViewMode("sphere")}
+              onClick={() => setViewMode("carousel")}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                viewMode === "sphere"
+                viewMode === "carousel"
                   ? "bg-white text-pure-black shadow-sm"
                   : "text-gray-500 hover:text-gray-700"
               }`}
             >
-              <span className="material-symbols-outlined text-[16px]">view_in_ar</span>
+              <span className="material-symbols-outlined text-[16px]">view_carousel</span>
             </button>
             <button
               onClick={() => setViewMode("grid")}
@@ -292,11 +292,8 @@ export default function DashboardPoliticiansPage() {
 
       {/* Main content area */}
       <div className="flex-1 overflow-hidden relative">
-        {viewMode === "sphere" ? (
-          <PoliticianSphere 
-            politicians={filteredPoliticians} 
-            onSelect={handleSelect}
-          />
+      {viewMode === "carousel" ? (
+  <PoliticianCarousel politicians={filteredPoliticians} onSelect={handleSelect} />
         ) : (
           <div className="h-full overflow-y-auto p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-7xl mx-auto">
