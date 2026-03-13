@@ -1,6 +1,10 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Leaderboard } from "@/components/ranking/leaderboard";
-import { getAllPoliticians } from "@/lib/data";
+import { getAllPoliticians } from "@/lib/data-supabase";
+import type { PoliticianWithParty } from "@/lib/types";
 
 // Categorías del mapa
 const rankingCategories = [
@@ -12,19 +16,47 @@ const rankingCategories = [
 ];
 
 export default function DashboardRankingPage() {
-  const politicians = getAllPoliticians();
+  const [politicians, setPoliticians] = useState<PoliticianWithParty[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      try {
+        const pols = await getAllPoliticians();
+        setPoliticians(pols);
+      } catch (error) {
+        console.error("Error loading ranking data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-500">Cargando ranking...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Calcular rankings específicos según categorías
   const mostActive = [...politicians]
-    .sort((a, b) => b.activity_score - a.activity_score)
+    .sort((a, b) => (b.activity_score || 0) - (a.activity_score || 0))
     .slice(0, 5);
 
   const bestAttendance = [...politicians]
-    .sort((a, b) => (b.activity_score * 0.8 + b.consistency_score * 0.2) - (a.activity_score * 0.8 + a.consistency_score * 0.2))
+    .sort((a, b) => ((b.activity_score || 0) * 0.8 + (b.consistency_score || 0) * 0.2) - 
+                    ((a.activity_score || 0) * 0.8 + (a.consistency_score || 0) * 0.2))
     .slice(0, 5);
 
   const mostIndependent = [...politicians]
-    .sort((a, b) => Math.random() - 0.5) // Simulado - en realidad se calcularía por votos contrarios al bloque
+    .sort((a, b) => Math.random() - 0.5)
     .slice(0, 5);
 
   return (
@@ -94,11 +126,11 @@ export default function DashboardRankingPage() {
                 >
                   <span className="text-lg font-bold text-gray-300 w-6 text-center">{i + 1}</span>
                   <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0">
-                    <img src={p.photo_url} alt={p.full_name} className="w-full h-full object-cover" />
+                    <img src={p.photo_url || "/default-avatar.png"} alt={p.full_name} className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-pure-black truncate">{p.full_name}</p>
-                    <p className="text-[10px] text-gray-400">{Math.round(p.activity_score * 100)}% actividad</p>
+                    <p className="text-[10px] text-gray-400">{Math.round((p.activity_score || 0) * 100)}% actividad</p>
                   </div>
                 </Link>
               ))}
@@ -120,44 +152,15 @@ export default function DashboardRankingPage() {
                 >
                   <span className="text-lg font-bold text-gray-300 w-6 text-center">{i + 1}</span>
                   <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0">
-                    <img src={p.photo_url} alt={p.full_name} className="w-full h-full object-cover" />
+                    <img src={p.photo_url || "/default-avatar.png"} alt={p.full_name} className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-pure-black truncate">{p.full_name}</p>
-                    <p className="text-[10px] text-gray-400">{Math.round(p.activity_score * 100)}% presencia</p>
+                    <p className="text-[10px] text-gray-400">{Math.round((p.activity_score || 0) * 100)}% presencia</p>
                   </div>
                 </Link>
               ))}
             </div>
-          </div>
-
-          {/* Más independientes */}
-          <div className="glass-card-dash rounded-2xl p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="material-symbols-outlined text-blue-500 text-[18px]">person_outline</span>
-              <h3 className="font-serif text-base font-medium text-pure-black">Más independientes</h3>
-            </div>
-            <div className="space-y-3">
-              {mostIndependent.map((p, i) => (
-                <Link
-                  key={p.id}
-                  href={`/dashboard/politicians/${p.id}`}
-                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/60 transition-colors"
-                >
-                  <span className="text-lg font-bold text-gray-300 w-6 text-center">{i + 1}</span>
-                  <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0">
-                    <img src={p.photo_url} alt={p.full_name} className="w-full h-full object-cover" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-pure-black truncate">{p.full_name}</p>
-                    <p className="text-[10px] text-gray-400">{p.party?.short_name || "Sin bloque"}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-            <p className="text-[10px] text-gray-400 mt-3 italic">
-              * Basado en votaciones contrarias al bloque partidario
-            </p>
           </div>
 
           {/* Crecimiento patrimonial - Placeholder */}

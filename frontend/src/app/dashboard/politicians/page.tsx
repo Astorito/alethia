@@ -1,17 +1,22 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Search, SlidersHorizontal, X, ArrowUpDown } from "lucide-react";
 import { PoliticianSphere } from "@/components/politicians/politician-sphere";
 import { PoliticianCard } from "@/components/politicians/politician-card";
-import { filterPoliticians, getAllParties, getAllProvinces } from "@/lib/data";
+import { filterPoliticians, getAllParties, getAllProvinces } from "@/lib/data-supabase";
 import type { PoliticianWithParty } from "@/lib/types";
 
 const BASE = "/dashboard/politicians";
 
 export default function DashboardPoliticiansPage() {
   const router = useRouter();
+  const [politicians, setPoliticians] = useState<PoliticianWithParty[]>([]);
+  const [parties, setParties] = useState<{ id: string; short_name: string }[]>([]);
+  const [provinces, setProvinces] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  
   const [filters, setFilters] = useState({
     party: "",
     province: "",
@@ -22,13 +27,52 @@ export default function DashboardPoliticiansPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<"sphere" | "grid">("sphere");
 
+  // Cargar datos al montar
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      try {
+        const [pols, parts, provs] = await Promise.all([
+          filterPoliticians({}),
+          getAllParties(),
+          getAllProvinces(),
+        ]);
+        setPoliticians(pols);
+        setParties(parts);
+        setProvinces(provs);
+      } catch (error) {
+        console.error("Error loading politicians:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  // Filtrar políticos
+  const filteredPoliticians = useMemo(() => {
+    return politicians.filter((p) => {
+      if (filters.party && p.party?.short_name !== filters.party) return false;
+      if (filters.province && p.province !== filters.province) return false;
+      if (filters.search && !p.full_name.toLowerCase().includes(filters.search.toLowerCase())) return false;
+      return true;
+    }).sort((a, b) => {
+      const dir = filters.sortDir === "asc" ? 1 : -1;
+      switch (filters.sortBy) {
+        case "name":
+          return a.full_name.localeCompare(b.full_name) * dir;
+        case "activity":
+          return ((a.activity_score || 0) - (b.activity_score || 0)) * dir;
+        case "score":
+        default:
+          return ((a.consistency_score || 0) - (b.consistency_score || 0)) * dir;
+      }
+    });
+  }, [politicians, filters]);
+
   const handleSelect = (politician: PoliticianWithParty) => {
     router.push(`${BASE}/${politician.id}`);
   };
-
-  const politicians = useMemo(() => filterPoliticians(filters), [filters]);
-  const parties = getAllParties();
-  const provinces = getAllProvinces();
 
   const updateFilters = (updates: Partial<typeof filters>) => {
     setFilters({ ...filters, ...updates });
@@ -46,6 +90,17 @@ export default function DashboardPoliticiansPage() {
 
   const hasActiveFilters = filters.party || filters.province || filters.search;
 
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-500">Cargando legisladores...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       {/* Compact Header with Search */}
@@ -55,7 +110,7 @@ export default function DashboardPoliticiansPage() {
           <div className="flex-shrink-0">
             <h1 className="font-serif text-xl font-semibold text-pure-black">Legisladores</h1>
             <p className="text-xs text-gray-400">
-              {politicians.length} encontrados
+              {filteredPoliticians.length} encontrados
             </p>
           </div>
 
@@ -140,8 +195,8 @@ export default function DashboardPoliticiansPage() {
                 >
                   <option value="">Todos los partidos</option>
                   {parties.map((party) => (
-                    <option key={party.id} value={party.short_name}>
-                      {party.short_name}
+                    <option key={party.id} value={party.short_name || party.id}>
+                      {party.short_name || party.id}
                     </option>
                   ))}
                 </select>
@@ -239,13 +294,13 @@ export default function DashboardPoliticiansPage() {
       <div className="flex-1 overflow-hidden relative">
         {viewMode === "sphere" ? (
           <PoliticianSphere 
-            politicians={politicians} 
+            politicians={filteredPoliticians} 
             onSelect={handleSelect}
           />
         ) : (
           <div className="h-full overflow-y-auto p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-7xl mx-auto">
-              {politicians.map((politician) => (
+              {filteredPoliticians.map((politician) => (
                 <div 
                   key={politician.id}
                   onClick={() => handleSelect(politician)}
@@ -255,7 +310,7 @@ export default function DashboardPoliticiansPage() {
                 </div>
               ))}
             </div>
-            {politicians.length === 0 && (
+            {filteredPoliticians.length === 0 && (
               <div className="text-center py-12">
                 <p className="text-gray-400 text-lg">
                   No se encontraron legisladores con los filtros aplicados.
