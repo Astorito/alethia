@@ -54,7 +54,6 @@ export interface Politician {
   created_at: string;
   updated_at: string;
   bloc: string | null;
-  bloc: string | null;
 chamber: string | null;
 }
 
