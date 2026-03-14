@@ -126,8 +126,10 @@ async def upsert_committee(conn, name):
     if row: return str(row["id"])
     cid = str(uuid.uuid4())
     await conn.execute(
-        "INSERT INTO committees (id, name, chamber, created_at, updated_at) VALUES ($1,$2,'deputies',NOW(),NOW())",
-        cid, name)
+    """INSERT INTO politicians
+       (id, full_name, first_name, last_name, province, bloc, chamber, source, created_at, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,'deputies','xml_api',NOW(),NOW())""",
+    pid, full_name, nombre, apellido, distrito, bloque)
     return cid
 
 
@@ -227,8 +229,8 @@ async def main():
                 pid           = str(ex["id"])
                 current_photo = ex["photo_url"] or ""
                 await conn.execute(
-                    "UPDATE politicians SET province=$1, updated_at=NOW() WHERE id=$2",
-                    distrito, pid)
+    "UPDATE politicians SET province=$1, bloc=$2, updated_at=NOW() WHERE id=$3",
+    distrito, bloque, pid)
             else:
                 pid = str(uuid.uuid4())
                 await conn.execute(
