@@ -185,6 +185,7 @@ export async function getPoliticianById(id: string): Promise<PoliticianProfile |
 }
 
 export async function filterPoliticians(filters: {
+  chamber?: string;   
   party?: string;
   province?: string;
   search?: string;
@@ -192,6 +193,8 @@ export async function filterPoliticians(filters: {
   sortDir?: "asc" | "desc";
 }): Promise<PoliticianWithParty[]> {
   let query = supabase.from("politicians").select("*");
+  if (filters.chamber) query = query.eq("chamber", filters.chamber);
+query = query.not("full_name", "is", null).neq("full_name", "");
   query = query.not("full_name", "is", null).neq("full_name", "");
 
   query = query.not("full_name", "is", null).neq("full_name", "");

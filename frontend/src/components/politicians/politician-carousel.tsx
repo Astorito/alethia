@@ -19,10 +19,10 @@ const CFG = {
   sideZStep: 18,      // px  z-recession per card outward
   maxRotDeg: 72,      // max Y-rotation for far cards
   rotCurve: 1.1,      // exponential curve speed
-  springK: 0.028,     // global scroll spring — más suave para ver el movimiento
-  springD: 0.78,      // global scroll spring damping
-  cardSpringK: 0.055, // per-card spring — más suave
-  cardSpringD: 0.82,  // per-card spring damping
+  springK: 0.018,     // global scroll spring — más suave para ver el movimiento
+  springD: 0.72,      // global scroll spring damping
+  cardSpringK: 0.038, // per-card spring — más suave
+  cardSpringD: 0.78,  // per-card spring damping
   opacityStep: 0.055, // opacity fade per card slot outward
   snapDelay: 500,     // ms antes de snap al entero más cercano
 };
@@ -119,9 +119,11 @@ export function PoliticianCarousel({ politicians, onSelect }: PoliticianCarousel
           if (name && politician) name.textContent = politician.full_name;
           // Update party badge
           const badge = card.querySelector<HTMLElement>(".card-party");
-          if (badge && politician?.party) {
-            badge.textContent = politician.party.short_name;
-            (badge as HTMLElement).style.background = politician.party.color_hex || "#444";
+          if (badge && politician) {
+            const label = politician.party?.short_name || (politician as any).bloc || "";
+            badge.textContent = label;
+            badge.style.background = politician.party?.color_hex || "#1a1a2e";
+            badge.style.display = label ? "block" : "none";
           }
           // Update score
           const score = card.querySelector<HTMLElement>(".card-score");
@@ -280,22 +282,19 @@ export function PoliticianCarousel({ politicians, onSelect }: PoliticianCarousel
               }} />
 
               {/* Party badge — top right */}
-              {politician?.party && (
-                <div
-                  className="card-party"
-                  style={{
-                    position: "absolute", top: 8, right: 8,
-                    background: politician.party.color_hex || "#444",
-                    color: "white", fontSize: 8, fontWeight: 700,
-                    letterSpacing: "0.06em", textTransform: "uppercase",
-                    padding: "3px 7px", borderRadius: 999,
-                    whiteSpace: "nowrap", maxWidth: CFG.cardW - 20,
-                    overflow: "hidden", textOverflow: "ellipsis",
-                  }}
-                >
-                  {politician.party.short_name}
-                </div>
-              )}
+              {(politician?.party || politician?.bloc) && (
+  <div className="card-party" style={{
+    position: "absolute", top: 8, right: 8,
+    background: politician.party?.color_hex || "#1a1a2e",
+    color: "white", fontSize: 8, fontWeight: 700,
+    letterSpacing: "0.06em", textTransform: "uppercase",
+    padding: "3px 7px", borderRadius: 999,
+    whiteSpace: "nowrap", maxWidth: CFG.cardW - 20,
+    overflow: "hidden", textOverflow: "ellipsis",
+  }}>
+    {politician.party?.short_name || politician.bloc}
+  </div>
+)}
 
               {/* Name + score bottom */}
               <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "10px 10px 11px" }}>

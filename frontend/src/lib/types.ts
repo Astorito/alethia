@@ -53,6 +53,9 @@ export interface Politician {
   external_id: string;
   created_at: string;
   updated_at: string;
+  bloc: string | null;
+  bloc: string | null;
+chamber: string | null;
 }
 
 export interface PoliticianRole {
