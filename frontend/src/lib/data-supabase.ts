@@ -192,7 +192,9 @@ export async function filterPoliticians(filters: {
   sortDir?: "asc" | "desc";
 }): Promise<PoliticianWithParty[]> {
   let query = supabase.from("politicians").select("*");
+  query = query.not("full_name", "is", null).neq("full_name", "");
 
+  query = query.not("full_name", "is", null).neq("full_name", "");
   if (filters.search) {
     query = query.ilike("full_name", `%${filters.search}%`);
   }
@@ -278,10 +280,11 @@ export async function getBillsByYear(year: number): Promise<Bill[]> {
 
 export async function getAllProvinces(): Promise<string[]> {
   const { data } = await supabase
-    .from("politicians")
-    .select("province")
-    .not("province", "is", null);
-
+  .from("politicians")
+  .select("province")
+  .not("province", "is", null)
+  .not("full_name", "is", null)
+  .neq("full_name", "");
   const provinces = [...new Set(data?.map((p) => p.province) || [])];
   return provinces.sort();
 }

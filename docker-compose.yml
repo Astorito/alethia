@@ -16,6 +16,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql
       - ./infra/postgres/schema.sql:/docker-entrypoint-initdb.d/02-schema.sql
+      - ./infra/postgres/migrations/001_add_committees_executive_assets.sql:/docker-entrypoint-initdb.d/03-migration-001.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U alethia"]
       interval: 5s
