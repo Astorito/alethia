@@ -1,51 +1,23 @@
-
-Copiar
-
 "use client";
- 
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TrendingUp, Bell, FileText, Database, HelpCircle, Network, ArrowLeft } from "lucide-react";
- 
+
 const features = [
-  {
-    icon: TrendingUp,
-    title: "Analítica Profunda",
-    description: "Visualización avanzada y cruce de datos para detectar patrones de gasto público.",
-  },
-  {
-    icon: Bell,
-    title: "Alertas en Tiempo Real",
-    description: "Monitorización de licitaciones y adjudicaciones según criterios específicos.",
-  },
-  {
-    icon: FileText,
-    title: "Reportes de Impacto",
-    description: "Generación de informes profesionales listos para publicación periodística.",
-  },
-  {
-    icon: Database,
-    title: "Histórico de Transparencia",
-    description: "Acceso a registros históricos consolidados para análisis evolutivo de fondos.",
-  },
-  {
-    icon: HelpCircle,
-    title: "Consultoría de Datos",
-    description: "Soporte especializado para la interpretación de estructuras de datos complejas.",
-  },
-  {
-    icon: Network,
-    title: "Red de Verificación",
-    description: "Conexión con otros entes de control para validar hallazgos e investigaciones.",
-  },
+  { icon: TrendingUp, title: "Analítica Profunda", description: "Visualización avanzada y cruce de datos para detectar patrones de gasto público." },
+  { icon: Bell, title: "Alertas en Tiempo Real", description: "Monitorización de licitaciones y adjudicaciones según criterios específicos." },
+  { icon: FileText, title: "Reportes de Impacto", description: "Generación de informes profesionales listos para publicación periodística." },
+  { icon: Database, title: "Histórico de Transparencia", description: "Acceso a registros históricos consolidados para análisis evolutivo de fondos." },
+  { icon: HelpCircle, title: "Consultoría de Datos", description: "Soporte especializado para la interpretación de estructuras de datos complejas." },
+  { icon: Network, title: "Red de Verificación", description: "Conexión con otros entes de control para validar hallazgos e investigaciones." },
 ];
- 
+
 export default function OnboardingOngPage() {
   const router = useRouter();
- 
+
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "#FDFCF9" }}>
-      {/* Header */}
       <header className="flex items-center justify-between px-8 lg:px-12 py-5 flex-shrink-0">
         <Link href="/" className="flex items-center gap-2.5">
           <div className="size-6 text-black opacity-80">
@@ -59,15 +31,13 @@ export default function OnboardingOngPage() {
           Salir
         </Link>
       </header>
- 
+
       <main className="flex-1 max-w-5xl mx-auto w-full px-6 py-12">
-        {/* Back */}
         <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-800 transition-colors mb-10">
           <ArrowLeft className="h-4 w-4" />
           Volver
         </button>
- 
-        {/* Hero */}
+
         <div className="text-center mb-16">
           <span className="text-[10px] uppercase tracking-[0.25em] font-medium text-gray-400 mb-4 block">Perfil ONG · Prensa</span>
           <h1 className="font-serif font-light text-3xl md:text-4xl text-gray-900 leading-snug mb-4 max-w-2xl mx-auto">
@@ -77,8 +47,7 @@ export default function OnboardingOngPage() {
             Herramientas diseñadas para la investigación profunda y el monitoreo de recursos públicos.
           </p>
         </div>
- 
-        {/* Features */}
+
         <div className="grid md:grid-cols-3 gap-x-12 gap-y-10 mb-16 border-t border-b border-black/5 py-14">
           {features.map((f) => (
             <div key={f.title} className="flex flex-col items-center text-center">
@@ -90,8 +59,7 @@ export default function OnboardingOngPage() {
             </div>
           ))}
         </div>
- 
-        {/* Registration form */}
+
         <div className="max-w-md mx-auto">
           <div className="text-center mb-10">
             <h2 className="font-serif text-2xl text-gray-900 mb-2">Comenzá hoy mismo</h2>
@@ -121,7 +89,7 @@ export default function OnboardingOngPage() {
           </form>
         </div>
       </main>
- 
+
       <footer className="py-10 px-8 border-t border-black/5">
         <div className="max-w-5xl mx-auto flex justify-between items-center text-[10px] uppercase tracking-widest text-gray-400">
           <span>© 2025 Alethia</span>
