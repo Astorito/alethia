@@ -1,34 +1,39 @@
 "use client";
-
+ 
 import { useState } from "react";
 import Link from "next/link";
-
+import { useRouter } from "next/navigation";
+ 
 type ProfileType = "ciudadano" | "empresa" | "ong";
-
+ 
 const profiles: { id: ProfileType; title: string; description: string }[] = [
   {
     id: "ciudadano",
     title: "Ciudadano",
-    description:
-      "Accede a información pública, realiza trámites personales y consulta expedientes con claridad.",
+    description: "Accedé a información pública, seguí legisladores y consultá expedientes con claridad.",
   },
   {
     id: "empresa",
     title: "Empresa",
-    description:
-      "Gestiona licitaciones, consulta regulaciones y mantén al día tus obligaciones de forma simple.",
+    description: "Gestioná licitaciones, consultá regulaciones y mantené al día tus obligaciones.",
   },
   {
     id: "ong",
     title: "ONG / Prensa",
-    description:
-      "Analiza datos abiertos, monitorea gastos públicos y genera reportes de impacto social.",
+    description: "Analizá datos abiertos, monitoreá gastos públicos y generá reportes de impacto.",
   },
 ];
-
+ 
 export default function OnboardingPage() {
   const [selected, setSelected] = useState<ProfileType>("ciudadano");
-
+  const router = useRouter();
+ 
+  function handleContinue() {
+    if (selected === "empresa") router.push("/onboarding/empresa");
+    else if (selected === "ong") router.push("/onboarding/ong");
+    else router.push("/dashboard");
+  }
+ 
   return (
     <div
       className="h-screen flex flex-col font-display text-pure-black overflow-hidden"
@@ -36,8 +41,8 @@ export default function OnboardingPage() {
     >
       <div className="ambient-light ambient-orb-1" />
       <div className="ambient-light ambient-orb-2" />
-
-      {/* Header compacto */}
+ 
+      {/* Header */}
       <header className="flex items-center justify-between px-8 lg:px-12 py-5 z-10 relative flex-shrink-0">
         <Link href="/" className="flex items-center gap-2.5">
           <div className="size-6 text-black opacity-80">
@@ -50,9 +55,7 @@ export default function OnboardingPage() {
               />
             </svg>
           </div>
-          <span className="text-lg font-medium tracking-tight text-black opacity-90 font-serif">
-            Alethia
-          </span>
+          <span className="text-lg font-medium tracking-tight text-black opacity-90 font-serif">Alethia</span>
         </Link>
         <Link
           href="/"
@@ -61,15 +64,14 @@ export default function OnboardingPage() {
           Salir
         </Link>
       </header>
-
+ 
       {/* Contenido central */}
       <main className="flex-1 flex flex-col items-center justify-center px-6 sm:px-8 z-10 relative gap-8">
-        {/* Título */}
         <h1 className="font-serif font-light text-[28px] md:text-[36px] leading-tight text-pure-black tracking-tight text-center">
           ¿Cómo vas a usar Alethia?
         </h1>
-
-        {/* Cards de perfil */}
+ 
+        {/* Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 w-full max-w-3xl">
           {profiles.map((profile) => {
             const isSelected = selected === profile.id;
@@ -82,58 +84,41 @@ export default function OnboardingPage() {
                   isSelected ? "glass-card-selected" : ""
                 }`}
               >
-                {/* Indicador de selección */}
-                <div
-                  className={`absolute top-3.5 right-3.5 transition-all duration-300 ${
-                    isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-40"
-                  }`}
-                >
+                <div className={`absolute top-3.5 right-3.5 transition-all duration-300 ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-40"}`}>
                   <span className="material-symbols-outlined text-[18px]">
                     {isSelected ? "check_circle" : "radio_button_unchecked"}
                   </span>
                 </div>
-
-                {/* Título del perfil */}
-                <h3
-                  className={`text-lg font-serif font-medium mb-2 transition-colors ${
-                    isSelected ? "text-pure-black" : "text-gray-600 group-hover:text-pure-black"
-                  }`}
-                >
+                <h3 className={`text-lg font-serif font-medium mb-2 transition-colors ${isSelected ? "text-pure-black" : "text-gray-600 group-hover:text-pure-black"}`}>
                   {profile.title}
                 </h3>
-
-                {/* Descripción */}
-                <p
-                  className={`text-[13px] leading-relaxed font-light transition-colors ${
-                    isSelected ? "text-gray-500" : "text-gray-400 group-hover:text-gray-500"
-                  }`}
-                >
+                <p className={`text-[13px] leading-relaxed font-light transition-colors ${isSelected ? "text-gray-500" : "text-gray-400 group-hover:text-gray-500"}`}>
                   {profile.description}
                 </p>
               </button>
             );
           })}
         </div>
-
+ 
         {/* CTA */}
         <div className="flex flex-col items-center gap-4">
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center justify-center h-12 px-10 bg-pure-black text-warm-white text-sm font-medium rounded-full hover:bg-black/80 transition-all duration-300 shadow-sm hover:shadow-md"
+          <button
+            type="button"
+            onClick={handleContinue}
+            className="inline-flex items-center justify-center h-12 px-10 bg-pure-black text-white text-sm font-medium rounded-full hover:bg-black/80 transition-all duration-300 shadow-sm hover:shadow-md"
           >
             Continuar
-          </Link>
+          </button>
           <button
             type="button"
             className="text-xs font-light text-gray-400 hover:text-gray-700 transition-colors"
           >
             ¿No estás seguro?{" "}
-            <span className="underline underline-offset-4 decoration-gray-300">
-              Realizar test breve
-            </span>
+            <span className="underline underline-offset-4 decoration-gray-300">Realizar test breve</span>
           </button>
         </div>
       </main>
     </div>
   );
 }
+ 
