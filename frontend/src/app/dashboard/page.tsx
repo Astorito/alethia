@@ -1,36 +1,21 @@
+"use client";
+
 import Link from "next/link";
+import { useState, useEffect } from "react";
 import { getDashboardStats, getRecentBills, getAllPoliticians } from "@/lib/data-supabase";
+import { TweetCarousel } from "@/components/dashboard/tweet-carousel";
 
 const TOPICS = [
   "Economía", "Seguridad", "Educación", "Salud",
   "Medioambiente", "Infraestructura", "Justicia", "Tecnología",
 ];
 
-const NEWS = [
-  {
-    id: "n1",
-    category: "Infraestructura",
-    title: "Acuerdo bipartidario en proyecto de infraestructura digital",
-    time: "Hace 2h",
-    image: "https://images.unsplash.com/photo-1541872703-74c5e44318f2?w=800&h=600&fit=crop",
-  },
-  {
-    id: "n2",
-    category: "Política Fiscal",
-    title: "Análisis de cambios en alícuotas impositivas 2024",
-    time: "Hace 5h",
-    image: "https://images.unsplash.com/photo-1551818255-e6e10975bc17?w=800&h=600&fit=crop",
-  },
-  {
-    id: "n3",
-    category: "Medioambiente",
-    title: "Expansión de áreas protegidas en el norte patagónico",
-    time: "Hace 1d",
-    image: "https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?w=800&h=600&fit=crop",
-  },
+const NEWS_MOCK = [
+  { id: "n1", category: "Infraestructura", title: "Acuerdo bipartidario en proyecto de infraestructura digital", time: "Hace 2h", image: "", url: "#" },
+  { id: "n2", category: "Política Fiscal", title: "Análisis de cambios en alícuotas impositivas 2024", time: "Hace 5h", image: "", url: "#" },
+  { id: "n3", category: "Medioambiente", title: "Expansión de áreas protegidas en el norte patagónico", time: "Hace 1d", image: "", url: "#" },
 ];
 
-// Heatmap data generator
 function generateHeatmap(seed: number) {
   const cells = [];
   for (let i = 0; i < 52; i++) {
@@ -50,14 +35,11 @@ const HEATMAP_COLORS = [
   "bg-emerald-800",
 ];
 
-export default async function DashboardPage() {
-  const stats = await getDashboardStats();
-  const politicians = await getAllPoliticians();
-  const recentBills = await getRecentBills(6);
-
-  const following = [...politicians]
-    .sort((a, b) => (b.activity_score || 0) - (a.activity_score || 0))
-    .slice(0, 5);
+export default function DashboardPage() {
+  const [stats, setStats]       = useState({ total_politicians: 0, total_sessions: 0, total_votes: 0 });
+  const [following, setFollowing] = useState<any[]>([]);
+  const [recentBills, setRecentBills] = useState<any[]>([]);
+  const [news, setNews]         = useState<any[]>(NEWS_MOCK);
 
   const heatmapRows = [
     { label: "L", cells: generateHeatmap(0) },
@@ -65,10 +47,33 @@ export default async function DashboardPage() {
     { label: "V", cells: generateHeatmap(2) },
   ];
 
+  useEffect(() => {
+    async function load() {
+      const [s, pols, bills] = await Promise.all([
+        getDashboardStats(),
+        getAllPoliticians(),
+        getRecentBills(6),
+      ]);
+      setStats(s);
+      setFollowing([...pols].sort((a, b) => (b.activity_score || 0) - (a.activity_score || 0)).slice(0, 5));
+      setRecentBills(bills);
+
+      // Noticias desde NewsAPI
+      try {
+        const newsRes  = await fetch("/api/news");
+        const newsData = await newsRes.json();
+        if (newsData.articles?.length > 0) setNews(newsData.articles);
+      } catch {
+        // fallback al mock
+      }
+    }
+    load();
+  }, []);
+
   return (
     <div className="space-y-10">
 
-      {/* ── Header ───────────────────────────────────────────────── */}
+      {/* Header */}
       <header className="flex items-center justify-between">
         <div>
           <h1 className="font-serif text-2xl font-bold text-gray-900">Dashboard</h1>
@@ -85,7 +90,7 @@ export default async function DashboardPage() {
         </div>
       </header>
 
-      {/* ── Following ────────────────────────────────────────────── */}
+      {/* Following */}
       <section>
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-serif text-lg font-bold text-gray-900">Siguiendo</h2>
@@ -95,11 +100,8 @@ export default async function DashboardPage() {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           {following.map((pol) => (
-            <Link
-              key={pol.id}
-              href={`/dashboard/politicians/${pol.id}`}
-              className="glass-card-dash p-3 rounded-xl flex items-center gap-3 hover:bg-white/40 transition-all group"
-            >
+            <Link key={pol.id} href={`/dashboard/politicians/${pol.id}`}
+              className="glass-card-dash p-3 rounded-xl flex items-center gap-3 hover:bg-white/40 transition-all group">
               <div className="w-10 h-10 rounded-full overflow-hidden border border-black/5 flex-shrink-0 grayscale group-hover:grayscale-0 transition-all">
                 {pol.photo_url ? (
                   <img src={pol.photo_url} alt={pol.full_name} className="w-full h-full object-cover" />
@@ -110,18 +112,20 @@ export default async function DashboardPage() {
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-bold text-gray-800 truncate">{pol.full_name?.split(" ")[0]} {pol.full_name?.split(" ").slice(-1)[0]}</p>
-                <p className="text-[9px] text-gray-400 uppercase tracking-tight truncate">{(pol as any).bloc?.split(" ").slice(0, 2).join(" ") || "—"}</p>
+                <p className="text-[11px] font-bold text-gray-800 truncate">
+                  {pol.full_name?.split(" ")[0]} {pol.full_name?.split(" ").slice(-1)[0]}
+                </p>
+                <p className="text-[9px] text-gray-400 uppercase tracking-tight truncate">
+                  {(pol as any).bloc?.split(" ").slice(0, 2).join(" ") || "—"}
+                </p>
               </div>
             </Link>
           ))}
         </div>
       </section>
 
-      {/* ── Live Session + Heatmap ───────────────────────────────── */}
+      {/* Live Session + Heatmap */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        {/* Sesión en vivo */}
         <section className="glass-card-dash rounded-2xl p-6">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
@@ -132,11 +136,8 @@ export default async function DashboardPage() {
           </div>
           <div className="flex gap-5 items-start">
             <div className="w-40 aspect-video rounded-xl overflow-hidden border border-black/5 flex-shrink-0">
-              <img
-                src="https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=400&h=250&fit=crop"
-                alt="Sesión en vivo"
-                className="w-full h-full object-cover grayscale-[0.3]"
-              />
+              <img src="https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=400&h=250&fit=crop"
+                alt="Sesión en vivo" className="w-full h-full object-cover grayscale-[0.3]" />
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="font-serif text-base font-bold text-gray-900 leading-snug mb-2">
@@ -157,7 +158,6 @@ export default async function DashboardPage() {
           </div>
         </section>
 
-        {/* Heatmap de actividad */}
         <section className="glass-card-dash rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-serif text-sm font-bold text-gray-900">Actividad Legislativa</h2>
@@ -170,10 +170,7 @@ export default async function DashboardPage() {
                   <span className="text-[7px] text-gray-400 w-3">{row.label}</span>
                   <div className="flex gap-[1.5px] flex-1">
                     {row.cells.map((level, i) => (
-                      <div
-                        key={i}
-                        className={`w-[6px] h-[6px] rounded-[1px] flex-shrink-0 ${HEATMAP_COLORS[level]}`}
-                      />
+                      <div key={i} className={`w-[6px] h-[6px] rounded-[1px] flex-shrink-0 ${HEATMAP_COLORS[level]}`} />
                     ))}
                   </div>
                 </div>
@@ -184,21 +181,17 @@ export default async function DashboardPage() {
               <div className="flex items-center gap-1.5">
                 <span className="text-[8px] text-gray-400">Menos</span>
                 <div className="flex gap-0.5">
-                  {[0,1,2,3,4,5].map(l => (
-                    <div key={l} className={`w-2 h-2 rounded-sm ${HEATMAP_COLORS[l]}`} />
-                  ))}
+                  {[0,1,2,3,4,5].map(l => <div key={l} className={`w-2 h-2 rounded-sm ${HEATMAP_COLORS[l]}`} />)}
                 </div>
                 <span className="text-[8px] text-gray-400">Más</span>
               </div>
             </div>
           </div>
-
-          {/* Mini stats */}
           <div className="grid grid-cols-3 gap-3 mt-4">
             {[
               { label: "Legisladores", value: stats.total_politicians },
-              { label: "Sesiones", value: stats.total_sessions },
-              { label: "Votaciones", value: stats.total_votes },
+              { label: "Sesiones",     value: stats.total_sessions },
+              { label: "Votaciones",   value: stats.total_votes },
             ].map(s => (
               <div key={s.label} className="text-center">
                 <p className="font-mono text-lg font-bold text-gray-900">{s.value}</p>
@@ -209,77 +202,85 @@ export default async function DashboardPage() {
         </section>
       </div>
 
-      {/* ── Noticias apiladas + Tópicos ──────────────────────────── */}
-      <div className="flex flex-col lg:flex-row gap-8 items-start">
+      {/* Noticias + Tweets + Tópicos — 3 columnas */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
         {/* Stacked news deck */}
-        <section className="w-full lg:w-1/2">
+        <section>
           <div className="flex items-center justify-between mb-6">
             <h2 className="font-serif text-lg font-bold text-gray-900">Últimas Noticias</h2>
             <Link href="/dashboard/news" className="text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-gray-900 transition-colors flex items-center gap-1">
               Ver archivo <span className="material-symbols-outlined text-[12px]">arrow_forward</span>
             </Link>
           </div>
-          {/* Stacked deck */}
           <div className="relative h-72 w-64 ml-4">
-            {[...NEWS].reverse().map((news, i) => {
-              const idx = NEWS.length - 1 - i;
+            {[...news].slice(0, 3).reverse().map((item, i) => {
+              const idx = Math.min(news.length, 3) - 1 - i;
               return (
-                <div
-                  key={news.id}
-                  className="absolute inset-0 rounded-2xl overflow-hidden border border-black/5 shadow-xl transition-all duration-400"
+                <a
+                  key={item.id}
+                  href={item.url || "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="absolute inset-0 rounded-2xl overflow-hidden border border-black/5 shadow-xl block"
                   style={{
                     zIndex: idx + 10,
                     transform: `translateX(${idx * 12}px) translateY(${-idx * 8}px) scale(${1 - idx * 0.02})`,
-                    opacity: 1 - idx * 0.1,
                   }}
                 >
-                  <img src={news.image} alt={news.title} className="absolute inset-0 w-full h-full object-cover brightness-75" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                  <div className="absolute inset-0" style={{ background: "#FDFCF9" }} />
+                  <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200" />
                   <div className="absolute bottom-0 left-0 p-5 w-full">
-                    <span className="text-[9px] font-bold text-white/70 uppercase tracking-widest mb-1 block">{news.category}</span>
-                    <h3 className="text-sm font-bold text-white leading-tight">{news.title}</h3>
-                    {idx === NEWS.length - 1 && (
-                      <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between">
-                        <span className="text-[9px] text-white/60 font-mono">{news.time}</span>
-                        <span className="material-symbols-outlined text-white text-sm">arrow_forward</span>
+                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1 block">
+                      {item.category || item.source}
+                    </span>
+                    <h3 className="text-sm font-bold text-gray-900 leading-tight line-clamp-2">{item.title}</h3>
+                    {idx === Math.min(news.length, 3) - 1 && (
+                      <div className="mt-3 pt-3 border-t border-black/10 flex items-center justify-between">
+                        <span className="text-[9px] text-gray-400 font-mono">{item.time}</span>
+                        <span className="material-symbols-outlined text-gray-500 text-sm">arrow_forward</span>
                       </div>
                     )}
                   </div>
-                </div>
+                </a>
               );
             })}
           </div>
         </section>
 
+        {/* Tweet carousel */}
+        <section>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="font-serif text-lg font-bold text-gray-900">Últimas Voces</h2>
+            <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-gray-400">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.748l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.912-5.622Zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+          </div>
+          <TweetCarousel />
+        </section>
+
         {/* Tópicos */}
-        <section className="w-full lg:w-1/2">
+        <section>
           <div className="mb-6 h-[27px]" />
-          <div className="glass-card-dash p-8 rounded-2xl h-72 flex flex-col justify-center">
-            <h2 className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-6">Tópicos que sigo</h2>
+          <div className="glass-card-dash p-6 rounded-2xl flex flex-col justify-center" style={{ minHeight: "200px" }}>
+            <h2 className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-4">Tópicos que sigo</h2>
             <div className="flex flex-wrap gap-2">
               {TOPICS.map((topic) => (
-                <Link
-                  key={topic}
-                  href="/dashboard/topics"
-                  className="flex items-center gap-1.5 bg-white/40 px-4 py-2 rounded-full text-xs font-medium border border-black/5 hover:bg-white/70 hover:border-black/10 cursor-pointer transition-all"
-                >
-                  <span className="text-gray-400 opacity-50">#</span>
-                  {topic}
+                <Link key={topic} href="/dashboard/topics"
+                  className="flex items-center gap-1.5 bg-white/40 px-3 py-1.5 rounded-full text-xs font-medium border border-black/5 hover:bg-white/70 hover:border-black/10 transition-all">
+                  <span className="text-gray-400 opacity-50">#</span>{topic}
                 </Link>
               ))}
             </div>
-            <div className="mt-6">
-              <button className="text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-gray-900 transition-colors flex items-center gap-2">
-                <span className="material-symbols-outlined text-sm">settings</span>
-                Gestionar suscripciones
-              </button>
-            </div>
+            <button className="mt-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-gray-900 transition-colors flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm">settings</span>
+              Gestionar suscripciones
+            </button>
           </div>
         </section>
       </div>
 
-      {/* ── Proyectos recientes ──────────────────────────────────── */}
+      {/* Proyectos recientes */}
       <section>
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-serif text-lg font-bold text-gray-900">Proyectos Recientes</h2>
@@ -296,15 +297,15 @@ export default async function DashboardPage() {
               </div>
               <span className={`text-[9px] px-2.5 py-1 rounded-full flex-shrink-0 font-medium ${
                 bill.status === "passed"    ? "bg-emerald-100 text-emerald-700" :
-                bill.status === "rejected" ? "bg-red-100 text-red-600" :
-                bill.status === "committee"? "bg-amber-100 text-amber-700" :
-                bill.status === "floor"    ? "bg-blue-100 text-blue-700" :
+                bill.status === "rejected"  ? "bg-red-100 text-red-600"         :
+                bill.status === "committee" ? "bg-amber-100 text-amber-700"     :
+                bill.status === "floor"     ? "bg-blue-100 text-blue-700"       :
                 "bg-gray-100 text-gray-500"
               }`}>
-                {bill.status === "passed"    ? "Aprobado"   :
-                 bill.status === "rejected"  ? "Rechazado"  :
-                 bill.status === "committee" ? "En comisión":
-                 bill.status === "floor"     ? "En debate"  : "Ingresado"}
+                {bill.status === "passed"    ? "Aprobado"    :
+                 bill.status === "rejected"  ? "Rechazado"   :
+                 bill.status === "committee" ? "En comisión" :
+                 bill.status === "floor"     ? "En debate"   : "Ingresado"}
               </span>
             </div>
           ))}
@@ -314,11 +315,9 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="border-t border-black/5 pt-6 text-center">
         <p className="text-[10px] text-gray-400 font-mono">© 2025 Alethia · Datos fuente: registros oficiales</p>
       </footer>
-
     </div>
   );
 }
