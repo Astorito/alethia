@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 // Estructura de navegación basada en el mapa de la plataforma
-// 7 dominios principales: Panorama, Legisladores, Ejecutivo, Temas, Análisis, Ranking, Alertas
+// 7 dominios principales: Panorama, Legisladores, Ejecutivo, Temas, Análisis, Alertas
 
 const mainNavigation = [
   { 
@@ -41,12 +41,7 @@ const analyticsNavigation = [
     icon: "bar_chart",
     description: "Visualizaciones"
   },
-  { 
-    name: "Ranking", 
-    href: "/dashboard/ranking", 
-    icon: "monitoring",
-    description: "Métricas y posiciones"
-  },
+  // "Ranking" eliminado
 ];
 
 const dailyNavigation = [
