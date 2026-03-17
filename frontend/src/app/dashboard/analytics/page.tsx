@@ -161,11 +161,10 @@ export default function AnalyticsPage() {
               nameA: al.polA.full_name,
               nameB: al.polB.full_name,
               sameParty: al.same_party,
-              alignmentRate: al.alignmentRate,
+              alignmentRate: al.alignment_rate, // <-- ¡Esta es la línea corregida!
               voteCount: al.vote_count,
             }))}
           />
-        </div>
 
         {/* Columna lateral: Insights */}
         <div className="lg:col-span-4 flex flex-col gap-6">
