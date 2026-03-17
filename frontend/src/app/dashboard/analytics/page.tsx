@@ -10,7 +10,6 @@ import {
 } from "@/lib/data";
 import { AnalyticsCharts } from "./analytics-charts";
 
-// Categorías del mapa para Análisis
 const analysisCategories = [
   { id: "votacion", name: "Red de votación", icon: "account_tree", description: "Patrones de alineación" },
   { id: "coalicion", name: "Red de coalición", icon: "handshake", description: "Alianzas entre bloques" },
@@ -54,7 +53,7 @@ export default function AnalyticsPage() {
   const allianceBarData = topAlliances.slice(0, 12).map((al) => ({
     label: `${al.polA.last_name} - ${al.polB.last_name}`,
     value: Math.round(al.alignment_rate * 100),
-    color: al.same_party ? "#7A90A4" : "#D8A48F", // Adaptado a los nuevos acentos
+    color: al.same_party ? "#7A90A4" : "#D8A48F",
   }));
 
   const gapBarData = discourseGaps.slice(0, 8).map((g) => ({
@@ -161,15 +160,16 @@ export default function AnalyticsPage() {
               nameA: al.polA.full_name,
               nameB: al.polB.full_name,
               sameParty: al.same_party,
-              alignmentRate: al.alignment_rate, // <-- ¡Esta es la línea corregida!
+              alignmentRate: al.alignment_rate,
               voteCount: al.vote_count,
             }))}
           />
+        </div>
 
         {/* Columna lateral: Insights */}
         <div className="lg:col-span-4 flex flex-col gap-6">
           
-          {/* Mapa de influencia - Top influencers */}
+          {/* Mapa de influencia */}
           <div className="glass-card rounded-xl p-6">
             <div className="flex justify-between items-center mb-6">
               <h4 className="font-bold text-[11px] uppercase tracking-[0.2em] text-slate-900 dark:text-slate-200">
@@ -232,7 +232,7 @@ export default function AnalyticsPage() {
                       ></div>
                       <div
                         className="w-3 h-3 bg-accent-blue border-2 border-white dark:border-slate-800 rounded-full absolute shadow-sm"
-                        style={{ left: `${randomVal}%`, transform: 'translateX(-50%)' }}
+                        style={{ left: `${randomVal}%`, transform: "translateX(-50%)" }}
                       ></div>
                     </div>
                     <span className="w-8 text-[11px] font-bold text-slate-900 dark:text-white text-right">
@@ -275,7 +275,7 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          {/* Discurso vs Realidad - Brechas */}
+          {/* Discurso vs Realidad */}
           <div className="glass-card rounded-xl p-6">
             <div className="flex justify-between items-center mb-6">
               <h4 className="font-bold text-[11px] uppercase tracking-[0.2em] text-slate-900 dark:text-slate-200">
